@@ -427,7 +427,9 @@ void mouse_info()
     if (mouse_disabled) {
         return;
     }
-
+#ifdef __3DS__
+    ctr_input_frame();
+#endif
     Gesture gesture;
     if (touch_get_gesture(&gesture)) {
         static int prevx;
@@ -436,7 +438,14 @@ void mouse_info()
         switch (gesture.type) {
         case kTap:
             if (gesture.numberOfTouches == 1) {
+#ifdef __3DS__
+                if(kHeld & KEY_R)
+                    mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
+                else
+                    mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
+#else
                 mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
+#endif
             } else if (gesture.numberOfTouches == 2) {
                 mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
             }
@@ -479,7 +488,10 @@ void mouse_info()
     int x;
     int y;
     int buttons = 0;
-
+#ifdef __3DS__
+    if(kHeld & KEY_L)
+        buttons |= MOUSE_STATE_RIGHT_BUTTON_DOWN;
+#endif
     MouseData mouseData;
     if (dxinput_get_mouse_state(&mouseData)) {
         x = mouseData.x;

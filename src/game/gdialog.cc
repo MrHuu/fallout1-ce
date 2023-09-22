@@ -41,6 +41,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define GAME_DIALOG_WINDOW_WIDTH 640
@@ -830,6 +834,10 @@ int scr_dialogue_init(int headFid, int reaction)
 
     gdDialogWentOff = true;
 
+#ifdef __3DS__
+    setDisplay(ctr_display_t::DISPLAY_DIALOG);
+#endif
+
     return 0;
 }
 
@@ -904,7 +912,9 @@ int scr_dialogue_exit()
     gmouse_3d_on();
 
     gdDialogWentOff = true;
-
+#ifdef __3DS__
+setPreviousAsCurrent();
+#endif
     return 0;
 }
 
@@ -3815,7 +3825,28 @@ static void about_loop()
     if (about_init() != 0) {
         return;
     }
+#ifdef __3DS__
+    int count = 0;
 
+    ctr_sys_swkbd("", "", about_input_string);
+
+    while (about_input_string[count] != '\0') {
+        count++;
+    }
+    about_input_index = count;
+//    about_update_display(1);
+
+    while (1) {
+        sharedFpsLimiter.mark();
+
+        if (about_process_input(get_input()) == -1) {
+            break;
+        }
+
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+#else
     beginTextInput();
 
     while (1) {
@@ -3830,7 +3861,7 @@ static void about_loop()
     }
 
     endTextInput();
-
+#endif
     about_exit();
     strcpy(dialogBlock.replyText, about_restore_string);
     dialogue_switch_mode = 0;

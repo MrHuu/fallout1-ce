@@ -125,8 +125,13 @@ static unsigned int bk_process_time;
 // 0x4B32C0
 int GNW_input_init(int use_msec_timer)
 {
+#ifdef __3DS__
+    ctr_init_qtm();
+#endif
     if (!dxinput_init()) {
+#ifndef __3DS__
         return -1;
+#endif
     }
 
     if (GNW_kb_set() == -1) {
@@ -165,6 +170,10 @@ int GNW_input_init(int use_msec_timer)
 // 0x4B3390
 void GNW_input_exit()
 {
+#ifdef __3DS__
+    ctr_exit_qtm();
+#endif
+
     // NOTE: Uninline.
     GNW95_input_exit();
     GNW_mouse_exit();
@@ -1088,6 +1097,33 @@ void GNW95_process_message()
     KeyboardData keyboardData;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
+
+#ifdef __3DS__
+        if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION) {
+
+        touchX = e.tfinger.x * 320;
+        touchY = e.tfinger.y * 240;
+
+        offsetX = (int)touchX * MAX_OFFSET_X / 320;
+        offsetY = (int)touchY * MAX_OFFSET_Y / 240;
+
+        lastTouchX = -offsetX;
+        lastTouchY = -offsetY;
+
+        if (lastTouchX > 0) {
+            lastTouchX = 0;
+        } else if (lastTouchX - 400 < -640) {
+            lastTouchX = -640 + 400;
+        }
+
+        if (lastTouchY > 0) {
+            lastTouchY = 0;
+        } else if (lastTouchY - 240 < -480) {
+            lastTouchY = -480 + 240;
+        }
+    }
+#endif
+
         switch (e.type) {
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:

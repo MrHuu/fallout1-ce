@@ -9,6 +9,16 @@
 
 namespace fallout {
 
+#ifdef __3DS__
+typedef struct {
+    SDL_Rect srcRect;
+    SDL_Rect dstRect;
+} TextureInfo;
+
+extern TextureInfo* textureInfos;
+extern int numTextureInfos;
+#endif
+
 extern Rect scr_size;
 extern ScreenBlitFunc* scr_blit;
 

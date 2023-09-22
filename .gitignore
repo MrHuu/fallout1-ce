@@ -391,3 +391,8 @@ FodyWeavers.xsd
 # CMake
 /out
 /build
+
+# 3DS
+*.elf
+*.3dsx
+*.cia

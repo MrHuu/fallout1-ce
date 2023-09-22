@@ -21,6 +21,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define FILE_DIALOG_LINE_COUNT 12
@@ -146,6 +150,10 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
         flags |= DIALOG_BOX_LARGE;
         flags &= ~DIALOG_BOX_0x20;
     }
+
+#ifdef __3DS__
+    setDisplay(ctr_display_t::DISPLAY_PAUSE_CONFIRM);
+#endif
 
     int maximumLineWidth = 0;
     if (hasTitle) {

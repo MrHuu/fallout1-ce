@@ -32,6 +32,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define PREFERENCES_WINDOW_WIDTH 640
@@ -384,7 +388,10 @@ int do_options()
         debug_printf("\nOPTION MENU: Error loading option dialog data!\n");
         return -1;
     }
-
+#ifdef __3DS__
+setDisplay(ctr_display_t::DISPLAY_PAUSE);
+//    currentDisplay = ctr_display_t::DISPLAY_PAUSE;
+#endif
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
@@ -458,7 +465,10 @@ int do_options()
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+//    currentDisplay = ctr_display_t::DISPLAY_FULL;
+setPreviousAsCurrent();
+#endif
     OptnEnd();
 
     return rc;

@@ -16,6 +16,11 @@
 #include "plib/gnw/vcr.h"
 #include "plib/gnw/winmain.h"
 
+#ifdef __3DS__
+#include "3ds.h"
+#endif
+
+
 namespace fallout {
 
 #define MAX_WINDOW_COUNT 50
@@ -181,7 +186,9 @@ int win_init(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* vide
     GNW_debug_init();
 
     if (GNW_input_init(flags) == -1) {
+#ifdef __3DS__
         return WINDOW_MANAGER_ERR_INITIALIZING_INPUT;
+#endif
     }
 
     GNW_intr_init();
@@ -1351,6 +1358,12 @@ static int colorClose(void* handle)
 // 0x4C42B8
 bool GNWSystemError(const char* text)
 {
+#ifdef __3DS__
+    errorConf msg;
+    errorInit(&msg, ERROR_TEXT, CFG_LANGUAGE_EN);
+    errorText(&msg, text);
+    errorDisp(&msg);
+#else
     SDL_Cursor* prev = SDL_GetCursor();
     SDL_Cursor* cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
     SDL_SetCursor(cursor);
@@ -1359,6 +1372,7 @@ bool GNWSystemError(const char* text)
     SDL_ShowCursor(SDL_DISABLE);
     SDL_SetCursor(prev);
     SDL_FreeCursor(cursor);
+#endif
     return true;
 }
 

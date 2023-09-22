@@ -28,6 +28,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_input.h"
+#endif
+
 namespace fallout {
 
 typedef enum ScrollableDirections {
@@ -1147,7 +1151,9 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL:
                         if (1) {
                             int skill = -1;
-
+#ifdef __3DS__
+//    currentDisplay = ctr_display_t::DISPLAY_SKILLDEX;
+#endif
                             int rc = skilldex_select();
                             switch (rc) {
                             case SKILLDEX_RC_SNEAK:
@@ -1177,8 +1183,14 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                             }
 
                             if (skill != -1) {
+#ifdef __3DS__
+//    currentDisplay = ctr_display_t::DISPLAY_FIELD;
+#endif
                                 action_use_skill_on(obj_dude, target, skill);
                             }
+#ifdef __3DS__
+//    currentDisplay = ctr_display_t::DISPLAY_FULL;
+#endif
                         }
                         break;
                     }

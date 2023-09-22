@@ -16,6 +16,10 @@
 #include "platform/ios/paths.h"
 #endif
 
+#ifdef __3DS__
+#include "3ds.h"
+#endif
+
 namespace fallout {
 
 // 0x53A290
@@ -56,6 +60,12 @@ int main(int argc, char* argv[])
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     chdir(SDL_AndroidGetExternalStoragePath());
+#endif
+
+#ifdef __3DS__
+    osSetSpeedupEnable(true);
+    gfxInitDefault();
+    chdir("sdmc:/3ds/fallout/");
 #endif
 
     SDL_ShowCursor(SDL_DISABLE);

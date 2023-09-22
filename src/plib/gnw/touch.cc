@@ -5,6 +5,12 @@
 
 #include "plib/gnw/svga.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_input.h"
+#include "platform/ctr/ctr_gfx.h"
+#include "mouse.h"
+#endif
+
 namespace fallout {
 
 #define TOUCH_PHASE_BEGAN 0
@@ -271,6 +277,66 @@ void touch_process_gesture()
                 currentGesture.y = currentCentroid.y;
                 gestureEventsQueue.push(currentGesture);
             }
+#ifdef __3DS__
+            int newX = 0;
+            int newY = 0;
+
+            mouse_hide();
+            touchPosition touch;
+            hidTouchRead(&touch);
+
+            switch (ctr_display.active)
+            {
+				case ctr_display_t::DISPLAY_FIELD:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 0, 1, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_GUI:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 1, 3, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_SKILLDEX:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 5, 2, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_MAIN:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 7, 1, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_PAUSE:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 8, 1, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_PAUSE_CONFIRM:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 9, 1, &newX, &newY);
+                    break;
+                }
+                case ctr_display_t::DISPLAY_DIALOG:
+                {
+					convertTouchToTextureCoordinates(touch.px, touch.py, textureInfos, 11, 1, &newX, &newY);
+                    break;
+                }
+                default:
+                    newX = (touch.px * screenGetWidth()) / 320;
+                    newY = (touch.py * screenGetHeight()) / 240;
+
+					// hackey scrollling, the edge is hard to reach..
+                    if (newX < 15) newX = 0;
+                    if (newY < 15) newY = 0;
+
+                    if (newX > 625) newX = 640;
+                    if (newY > 465) newY = 480;
+                    break;
+            }
+            mouse_set_position(newX, newY);
+            mouse_show();
+#endif
         }
     }
 }

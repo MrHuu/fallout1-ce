@@ -45,6 +45,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define DEATH_WINDOW_WIDTH 640
@@ -106,6 +110,10 @@ int gnw_main(int argc, char** argv)
         config_get_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, &language_filter);
 
         while (!done) {
+#ifdef __3DS__
+        if (ctr_display.active != ctr_display_t::DISPLAY_MAIN)
+            setDisplay(ctr_display_t::DISPLAY_MAIN);
+#endif
             kb_clear();
             gsound_background_play_level_music("07desert", 11);
             main_menu_show(1);
@@ -122,6 +130,9 @@ int gnw_main(int argc, char** argv)
             case MAIN_MENU_NEW_GAME:
                 main_menu_hide(true);
                 main_menu_destroy();
+#ifdef __3DS__
+                setDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
                 if (select_character() == 2) {
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
                     roll_set_seed(-1);
@@ -150,7 +161,9 @@ int gnw_main(int argc, char** argv)
                     main_menu_hide(true);
                     main_menu_destroy();
                     gsound_background_stop();
-
+#ifdef __3DS__
+                    setDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
                     // NOTE: Uninline.
                     main_loadgame_new();
 

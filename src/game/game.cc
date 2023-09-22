@@ -57,6 +57,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define HELP_SCREEN_WIDTH 640
@@ -580,7 +584,10 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             gsound_play_sfx_file("ib1p1xx1");
 
             int mode = -1;
-
+#ifdef __3DS__
+setDisplay(ctr_display_t::DISPLAY_SKILLDEX);
+//    currentDisplay = ctr_display_t::DISPLAY_SKILLDEX;
+#endif
             // NOTE: There is an `inc` for this value to build jump table which
             // is not needed.
             int rc = skilldex_select();
@@ -619,9 +626,17 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             }
 
             if (mode != -1) {
+#ifdef __3DS__
+setDisplay(ctr_display_t::DISPLAY_FIELD);
+//    currentDisplay = ctr_display_t::DISPLAY_FIELD;
+#endif
                 gmouse_set_cursor(MOUSE_CURSOR_USE_CROSSHAIR);
                 gmouse_3d_set_mode(mode);
             }
+#ifdef __3DS__
+setDisplay(ctr_display_t::DISPLAY_FULL);
+//    currentDisplay = ctr_display_t::DISPLAY_FULL;
+#endif
         }
         break;
     case KEY_UPPERCASE_Z:

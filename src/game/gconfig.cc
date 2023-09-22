@@ -5,6 +5,10 @@
 
 #include "platform_compat.h"
 
+#ifdef __3DS__
+#include "3ds.h"
+#endif
+
 namespace fallout {
 
 // A flag indicating if `game_config` was initialized.
@@ -119,6 +123,9 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
         config_set_value(&game_config, GAME_CONFIG_MAPPER_KEY, GAME_CONFIG_DEFAULT_F8_AS_GAME_KEY, 1);
     }
 
+#ifdef __3DS__
+    strcpy(gconfig_file_name, "sdmc:/3ds/fallout/fallout.cfg");
+#else
     // Make `fallout.cfg` file path.
     sep = strrchr(argv[0], '\\');
     if (sep != NULL) {
@@ -128,7 +135,7 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
     } else {
         strcpy(gconfig_file_name, GAME_CONFIG_FILE_NAME);
     }
-
+#endif
     // Read contents of `fallout.cfg` into config. The values from the file
     // will override the defaults above.
     config_load(&game_config, gconfig_file_name, false);

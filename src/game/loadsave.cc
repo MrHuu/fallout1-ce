@@ -2189,11 +2189,11 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
 
     char text[256];
     strcpy(text, description);
-
+#ifndef __3DS__
     int textLength = strlen(text);
     text[textLength] = ' ';
     text[textLength + 1] = '\0';
-
+#endif
     int nameWidth = text_width(text);
 
     buf_fill(windowBuffer + windowWidth * y + x, nameWidth, lineHeight, windowWidth, backgroundColor);
@@ -2201,7 +2201,15 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
 
     win_draw(win);
     renderPresent();
-
+#ifdef __3DS__
+    int rc = 1;
+    renderPresent();
+    ctr_sys_swkbd("", text, description);
+    buf_fill(windowBuffer + windowWidth * y + x, text_width(text), lineHeight, windowWidth, backgroundColor);
+    text_to_buf(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
+    renderPresent();
+    rc = 0;
+#else
     beginTextInput();
 
     int blinkCounter = 3;
@@ -2279,7 +2287,7 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
         text[textLength] = '\0';
         strcpy(description, text);
     }
-
+#endif
     return rc;
 }
 

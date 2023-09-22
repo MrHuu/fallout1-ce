@@ -18,6 +18,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define MAIN_MENU_WINDOW_WIDTH 640
@@ -250,6 +254,9 @@ void main_menu_destroy()
 // 0x473330
 void main_menu_hide(bool animate)
 {
+#ifdef __3DS__
+//    currentDisplay = ctr_display_t::DISPLAY_FULL;
+#endif
     if (!main_menu_created) {
         return;
     }

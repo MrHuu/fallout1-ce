@@ -7,6 +7,11 @@
 #include "plib/gnw/mouse.h"
 #include "plib/gnw/winmain.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_input.h"
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 static int GNW95_init_mode_ex(int width, int height, int bpp);
@@ -26,6 +31,42 @@ SDL_Surface* gSdlSurface = NULL;
 SDL_Renderer* gSdlRenderer = NULL;
 SDL_Texture* gSdlTexture = NULL;
 SDL_Surface* gSdlTextureSurface = NULL;
+
+#ifdef __3DS__
+SDL_Window* gSdlWindow2 = NULL;
+SDL_Renderer* gSdlRenderer2 = NULL;
+
+SDL_Rect sourceRect1 = {0, 0, 640, 480};
+SDL_Rect sourceRect2 = {0, 0, 640, 480};
+
+SDL_Rect destRect1 = {0, 0, 400, 240};
+SDL_Rect destRect2 = {0, 0, 320, 240};
+
+SDL_Surface* surface2 = SDL_CreateRGBSurface(0, 640, 480, 32, 0, 0, 0, 0);
+
+TextureInfo* textureInfos = NULL;
+int numTextureInfos = 0;
+
+void addTextureInfo(TextureInfo** textureInfos, int* numTextureInfos, const SDL_Rect* srcRect, const SDL_Rect* dstRect) {
+    *numTextureInfos += 1;
+    *textureInfos = (TextureInfo*)realloc(*textureInfos, (*numTextureInfos) * sizeof(TextureInfo));
+    (*textureInfos)[*numTextureInfos - 1].srcRect = *srcRect;
+    (*textureInfos)[*numTextureInfos - 1].dstRect = *dstRect;
+}
+
+void removeTextureInfo(TextureInfo** textureInfos, int* numTextureInfos, int index) {
+    if (index < 0 || index >= *numTextureInfos) {
+        return;
+    }
+
+    for (int i = index; i < *numTextureInfos - 1; ++i) {
+        (*textureInfos)[i] = (*textureInfos)[i + 1];
+    }
+
+    *numTextureInfos -= 1;
+    *textureInfos = (TextureInfo*)realloc(*textureInfos, (*numTextureInfos) * sizeof(TextureInfo));
+}
+#endif
 
 // TODO: Remove once migration to update-render cycle is completed.
 FpsLimiter sharedFpsLimiter;
@@ -180,8 +221,26 @@ int GNW95_init_window(int width, int height, bool fullscreen, int scale)
             windowFlags |= SDL_WINDOW_FULLSCREEN;
         }
 
+#ifdef __3DS__
+        int numDisplays = SDL_GetNumVideoDisplays();
+        if (numDisplays < 2) {
+            SDL_Quit();
+            return 1;
+        }
+
+        SDL_Rect displayBounds1, displayBounds2;
+        SDL_GetDisplayBounds(0, &displayBounds1);
+        SDL_GetDisplayBounds(1, &displayBounds2);
+
+        gSdlWindow = SDL_CreateWindow("GFX_TOP", displayBounds1.x, displayBounds1.y, 400, 240, 0);
+        gSdlWindow2 = SDL_CreateWindow("GFX_BOTTOM", displayBounds2.x, displayBounds2.y, 320, 240, 0);
+#else
         gSdlWindow = SDL_CreateWindow(GNW95_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * scale, height * scale, windowFlags);
+#endif
         if (gSdlWindow == NULL) {
+#ifdef __3DS__
+            GNWSystemError("SDL_CreateWindow failed\n");
+#endif
             return -1;
         }
 
@@ -190,7 +249,9 @@ int GNW95_init_window(int width, int height, bool fullscreen, int scale)
 
             SDL_DestroyWindow(gSdlWindow);
             gSdlWindow = NULL;
-
+#ifdef __3DS__
+            GNWSystemError("createRenderer failed\n");
+#endif
             return -1;
         }
     }
@@ -331,15 +392,24 @@ int screenGetVisibleHeight()
 
 static bool createRenderer(int width, int height)
 {
+#ifdef __3DS__
     gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
+    gSdlRenderer2 = SDL_CreateRenderer(gSdlWindow2, -1, 0);
+#else
+    gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
+#endif
     if (gSdlRenderer == NULL) {
         return false;
     }
-
+#ifdef __3DS__
+    if (SDL_RenderSetLogicalSize(gSdlRenderer, 400, 240) != 0) {
+        return false;
+    }
+#else
     if (SDL_RenderSetLogicalSize(gSdlRenderer, width, height) != 0) {
         return false;
     }
-
+#endif
     gSdlTexture = SDL_CreateTexture(gSdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (gSdlTexture == NULL) {
         return false;
@@ -354,6 +424,83 @@ static bool createRenderer(int width, int height)
     if (gSdlTextureSurface == NULL) {
         return false;
     }
+
+#ifdef __3DS__
+    numTextureInfos = 0;
+
+    SDL_Rect srcRectTmp;
+    SDL_Rect dstRectTmp;
+
+    // FIELD
+    srcRectTmp = {   0,   0, 640, 380 }; // x, y, w, h
+    dstRectTmp = {   0,   0, 320, 190 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // BOTTOM CONSOLE 1/3
+    srcRectTmp = {   5, 380, 200, 100 };
+    dstRectTmp = {   0,  10, 200, 100 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // BOTTOM WEAPON 2/3
+    srcRectTmp = { 200, 380, 320, 100 };
+    dstRectTmp = {   0, 140, 320, 100 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // BOTTOM PIP SKILLDEX 3/3
+    srcRectTmp = { 520, 380, 140, 100 };
+    dstRectTmp = { 200,  10, 120, 100 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // MOVIE
+    srcRectTmp = {   0,   0, 640, 480 };
+    dstRectTmp = {   0,   0, 320, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // SKILLDEX 1/2
+    srcRectTmp = { 452,   5, 250, 190 };
+    dstRectTmp = {   0,   0, 160, 190 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // SKILLDEX 2/2
+    srcRectTmp = { 452, 190, 250, 180 };
+    dstRectTmp = { 160,  40, 160, 180 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // MAIN
+    srcRectTmp = { 400,  25, 215, 220 };
+    dstRectTmp = {  55,   0, 215, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // PAUSE
+    srcRectTmp = { 240,  72, 160, 215 };
+    dstRectTmp = {  55,   0, 215, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // PAUSE CONFIRM
+    srcRectTmp = { 100, 120, 320, 215 };
+    dstRectTmp = {  55,   0, 215, 215 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // DIALOG_TOP
+    srcRectTmp = {  80,   0, 480, 300 };
+    dstRectTmp = {   0,   0, 400, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // DIALOG_BOTTOM
+    srcRectTmp = {  80, 300, 480, 180 };
+    dstRectTmp = {   0,   0, 320, 180 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // DIALOG_BOTTOM_LEFT
+    srcRectTmp = {   0, 260,  80, 220 };
+    dstRectTmp = {   0,   0, 320, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+
+    // DIALOG_BOTTOM_RIGHT
+    srcRectTmp = { 560, 260,  80, 220 };
+    dstRectTmp = {   0,   0, 320, 240 };
+    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
+#endif
 
     return true;
 }
@@ -374,6 +521,13 @@ static void destroyRenderer()
         SDL_DestroyRenderer(gSdlRenderer);
         gSdlRenderer = NULL;
     }
+#ifdef __3DS__
+    if (gSdlRenderer2 != NULL) {
+        SDL_DestroyRenderer(gSdlRenderer2);
+        gSdlRenderer2 = NULL;
+    }
+    free(textureInfos);
+#endif
 }
 
 void handleWindowSizeChanged()
@@ -385,9 +539,147 @@ void handleWindowSizeChanged()
 void renderPresent()
 {
     SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
+#ifdef __3DS__
+
+// top screen
+
+    SDL_Rect sourceRect;
+    SDL_Rect destRect;
+
+    SDL_RenderClear(gSdlRenderer);
+
+
+    switch (ctr_display.active)
+    {
+        case ctr_display_t::DISPLAY_SPLASH:
+        case ctr_display_t::DISPLAY_MAIN:
+        case ctr_display_t::DISPLAY_PAUSE:
+        case ctr_display_t::DISPLAY_SKILLDEX:
+        {
+            sourceRect = {    0,   0, 640, 480 };
+            destRect   = {   40,   0, 320, 240 };
+            break;
+        }
+        case ctr_display_t::DISPLAY_MOVIE:
+        {
+			sourceRect = { 105,  80, 430, 320 };
+            destRect   = {  40,   0, 320, 240 };
+            break;
+        }
+        case ctr_display_t::DISPLAY_DIALOG:
+        {
+            TextureInfo* textureInfo = &textureInfos[10];
+            sourceRect = textureInfo->srcRect;
+            destRect   = textureInfo->dstRect;
+            break;
+        }
+        default:
+            switch (currentInput)
+            {
+                case ctr_input_t::INPUT_TOUCH:
+                {
+                    sourceRect = { offsetX, offsetY, 400, 240 };
+                    break;
+                }
+                case ctr_input_t::INPUT_QTM:
+                {
+                    sourceRect = { qtm_offsetX, qtm_offsetY, 400, 240 };
+                    break;
+                }
+                default:
+                    sourceRect = { 0, 0, 400, 240 };
+                    break;
+            }
+
+            destRect = { 0, 0, 400, 240 };
+            break;
+    }
+    SDL_RenderCopy(gSdlRenderer, gSdlTexture, &sourceRect, &destRect);
+    SDL_RenderPresent(gSdlRenderer);
+
+
+// bottom screen
+    SDL_RenderClear(gSdlRenderer2);
+    SDL_BlitSurface(gSdlTextureSurface, &sourceRect2, surface2, &destRect2);
+
+    SDL_Texture* surfaceTexture2 = SDL_CreateTextureFromSurface(gSdlRenderer2, surface2);
+
+    switch (ctr_display.active)
+    {
+        case ctr_display_t::DISPLAY_FULL:
+        {
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, NULL, NULL);
+            break;
+        }
+        case ctr_display_t::DISPLAY_FIELD:
+        {
+            TextureInfo* textureInfo = &textureInfos[0];
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            break;
+        }
+        case ctr_display_t::DISPLAY_GUI:
+        {
+            for (int i = 1; i < 4; ++i) {
+                TextureInfo* textureInfo = &textureInfos[i];
+                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            }
+            break;
+        }
+        case ctr_display_t::DISPLAY_SPLASH:
+        case ctr_display_t::DISPLAY_MOVIE:
+        {
+//            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, NULL, NULL);
+            break;
+        }
+        case ctr_display_t::DISPLAY_SKILLDEX:
+        {
+            for (int i = 5; i < 7; ++i) {
+                TextureInfo* textureInfo = &textureInfos[i];
+                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            }
+            break;
+        }
+        case ctr_display_t::DISPLAY_MAIN:
+        {
+            TextureInfo* textureInfo = &textureInfos[7];
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            break;
+        }
+        case ctr_display_t::DISPLAY_PAUSE:
+        {
+            TextureInfo* textureInfo = &textureInfos[8];
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            break;
+        }
+        case ctr_display_t::DISPLAY_PAUSE_CONFIRM:
+        {
+            TextureInfo* textureInfo = &textureInfos[9];
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            break;
+        }
+        case ctr_display_t::DISPLAY_DIALOG:
+        {
+            TextureInfo* textureInfo = &textureInfos[11];
+            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            break;
+        }
+        default:
+            for (int i = 0; i < numTextureInfos; ++i) {
+                TextureInfo* textureInfo = &textureInfos[i];
+                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            }
+            break;
+    }
+            SDL_RenderPresent(gSdlRenderer2);
+
+
+
+    SDL_DestroyTexture(surfaceTexture2);
+#else
     SDL_RenderClear(gSdlRenderer);
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, NULL, NULL);
     SDL_RenderPresent(gSdlRenderer);
+#endif
 }
 
 } // namespace fallout

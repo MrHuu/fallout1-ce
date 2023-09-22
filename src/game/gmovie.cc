@@ -21,6 +21,10 @@
 #include "plib/gnw/text.h"
 #include "plib/gnw/touch.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
+#endif
+
 namespace fallout {
 
 #define GAME_MOVIE_WINDOW_WIDTH 640
@@ -101,6 +105,11 @@ int gmovie_save(DB_FILE* stream)
 // 0x44E690
 int gmovie_play(int game_movie, int game_movie_flags)
 {
+#ifdef __3DS__
+//    int previousDisplay = currentDisplay;
+//    currentDisplay = ctr_display_t::DISPLAY_MOVIE;
+setDisplay(ctr_display_t::DISPLAY_MOVIE);
+#endif
     dir_entry de;
     char movieFilePath[COMPAT_MAX_PATH];
 
@@ -110,6 +119,9 @@ int gmovie_play(int game_movie, int game_movie_flags)
 
     if (db_dir_entry(movieFilePath, &de) != 0) {
         debug_printf("\ngmovie_play() - Error: Unable to open %s\n", movie_list[game_movie]);
+#ifdef __3DS__
+//        currentDisplay = previousDisplay;
+#endif
         return -1;
     }
 
@@ -126,6 +138,10 @@ int gmovie_play(int game_movie, int game_movie_flags)
         0,
         WINDOW_MODAL);
     if (win == -1) {
+#ifdef __3DS__
+//        currentDisplay = previousDisplay;
+//setDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
         return -1;
     }
 
@@ -249,7 +265,11 @@ int gmovie_play(int game_movie, int game_movie_flags)
 
         palette_fade_to(cmap);
     }
-
+#ifdef __3DS__
+//    currentDisplay = previousDisplay;
+//currentDisplay = ctr_display_t::DISPLAY_FULL;
+//setDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
     return 0;
 }
 

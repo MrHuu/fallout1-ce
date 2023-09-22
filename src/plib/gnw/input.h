@@ -6,6 +6,10 @@
 #include "plib/gnw/kb.h"
 #include "plib/gnw/mouse.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_input.h"
+#endif
+
 namespace fallout {
 
 typedef void(IdleFunc)();
