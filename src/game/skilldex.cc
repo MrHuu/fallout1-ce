@@ -385,6 +385,7 @@ static int skilldex_start()
     }
 
     win_draw(skldxwin);
+
     return 0;
 }
 

@@ -1097,31 +1097,14 @@ void GNW95_process_message()
     KeyboardData keyboardData;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-
 #ifdef __3DS__
-        if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION) {
+        if ((e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION) && (currentInput==ctr_input_t::INPUT_TOUCH) ){
+            int touchX = e.tfinger.x * 320;
+            int touchY = e.tfinger.y * 240;
 
-        touchX = e.tfinger.x * 320;
-        touchY = e.tfinger.y * 240;
-
-        offsetX = (int)touchX * MAX_OFFSET_X / 320;
-        offsetY = (int)touchY * MAX_OFFSET_Y / 240;
-
-        lastTouchX = -offsetX;
-        lastTouchY = -offsetY;
-
-        if (lastTouchX > 0) {
-            lastTouchX = 0;
-        } else if (lastTouchX - 400 < -640) {
-            lastTouchX = -640 + 400;
+            offsetX = (int)touchX * MAX_OFFSET_X / 320;
+            offsetY = (int)touchY * MAX_OFFSET_Y / 240;
         }
-
-        if (lastTouchY > 0) {
-            lastTouchY = 0;
-        } else if (lastTouchY - 240 < -480) {
-            lastTouchY = -480 + 240;
-        }
-    }
 #endif
 
         switch (e.type) {

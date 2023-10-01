@@ -585,8 +585,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
 
             int mode = -1;
 #ifdef __3DS__
-setDisplay(ctr_display_t::DISPLAY_SKILLDEX);
-//    currentDisplay = ctr_display_t::DISPLAY_SKILLDEX;
+            setActiveDisplay(ctr_display_t::DISPLAY_SKILLDEX);
 #endif
             // NOTE: There is an `inc` for this value to build jump table which
             // is not needed.
@@ -627,15 +626,13 @@ setDisplay(ctr_display_t::DISPLAY_SKILLDEX);
 
             if (mode != -1) {
 #ifdef __3DS__
-setDisplay(ctr_display_t::DISPLAY_FIELD);
-//    currentDisplay = ctr_display_t::DISPLAY_FIELD;
+            setActiveDisplay(ctr_display_t::DISPLAY_FIELD);
 #endif
                 gmouse_set_cursor(MOUSE_CURSOR_USE_CROSSHAIR);
                 gmouse_3d_set_mode(mode);
             }
 #ifdef __3DS__
-setDisplay(ctr_display_t::DISPLAY_FULL);
-//    currentDisplay = ctr_display_t::DISPLAY_FULL;
+            setActiveDisplay(ctr_display_t::DISPLAY_FULL);
 #endif
         }
         break;

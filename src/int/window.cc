@@ -1601,7 +1601,6 @@ void initWindow(int resolution, int a2)
     for (int i = 0; i < MANAGED_WINDOW_COUNT; i++) {
         windows[i].window = -1;
     }
-
     rc = win_init(gfx_init[resolution], GNW95_reset_mode, a2);
 
     if (rc != WINDOW_MANAGER_OK) {

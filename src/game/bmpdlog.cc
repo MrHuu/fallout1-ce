@@ -152,7 +152,7 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
     }
 
 #ifdef __3DS__
-    setDisplay(ctr_display_t::DISPLAY_PAUSE_CONFIRM);
+    setActiveDisplay(ctr_display_t::DISPLAY_PAUSE_CONFIRM);
 #endif
 
     int maximumLineWidth = 0;

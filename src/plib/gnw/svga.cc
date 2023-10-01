@@ -36,36 +36,10 @@ SDL_Surface* gSdlTextureSurface = NULL;
 SDL_Window* gSdlWindow2 = NULL;
 SDL_Renderer* gSdlRenderer2 = NULL;
 
-SDL_Rect sourceRect1 = {0, 0, 640, 480};
 SDL_Rect sourceRect2 = {0, 0, 640, 480};
-
-SDL_Rect destRect1 = {0, 0, 400, 240};
 SDL_Rect destRect2 = {0, 0, 320, 240};
 
 SDL_Surface* surface2 = SDL_CreateRGBSurface(0, 640, 480, 32, 0, 0, 0, 0);
-
-TextureInfo* textureInfos = NULL;
-int numTextureInfos = 0;
-
-void addTextureInfo(TextureInfo** textureInfos, int* numTextureInfos, const SDL_Rect* srcRect, const SDL_Rect* dstRect) {
-    *numTextureInfos += 1;
-    *textureInfos = (TextureInfo*)realloc(*textureInfos, (*numTextureInfos) * sizeof(TextureInfo));
-    (*textureInfos)[*numTextureInfos - 1].srcRect = *srcRect;
-    (*textureInfos)[*numTextureInfos - 1].dstRect = *dstRect;
-}
-
-void removeTextureInfo(TextureInfo** textureInfos, int* numTextureInfos, int index) {
-    if (index < 0 || index >= *numTextureInfos) {
-        return;
-    }
-
-    for (int i = index; i < *numTextureInfos - 1; ++i) {
-        (*textureInfos)[i] = (*textureInfos)[i + 1];
-    }
-
-    *numTextureInfos -= 1;
-    *textureInfos = (TextureInfo*)realloc(*textureInfos, (*numTextureInfos) * sizeof(TextureInfo));
-}
 #endif
 
 // TODO: Remove once migration to update-render cycle is completed.
@@ -222,6 +196,8 @@ int GNW95_init_window(int width, int height, bool fullscreen, int scale)
         }
 
 #ifdef __3DS__
+        initializeDisplayRectMap();
+
         int numDisplays = SDL_GetNumVideoDisplays();
         if (numDisplays < 2) {
             SDL_Quit();
@@ -425,83 +401,6 @@ static bool createRenderer(int width, int height)
         return false;
     }
 
-#ifdef __3DS__
-    numTextureInfos = 0;
-
-    SDL_Rect srcRectTmp;
-    SDL_Rect dstRectTmp;
-
-    // FIELD
-    srcRectTmp = {   0,   0, 640, 380 }; // x, y, w, h
-    dstRectTmp = {   0,   0, 320, 190 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // BOTTOM CONSOLE 1/3
-    srcRectTmp = {   5, 380, 200, 100 };
-    dstRectTmp = {   0,  10, 200, 100 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // BOTTOM WEAPON 2/3
-    srcRectTmp = { 200, 380, 320, 100 };
-    dstRectTmp = {   0, 140, 320, 100 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // BOTTOM PIP SKILLDEX 3/3
-    srcRectTmp = { 520, 380, 140, 100 };
-    dstRectTmp = { 200,  10, 120, 100 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // MOVIE
-    srcRectTmp = {   0,   0, 640, 480 };
-    dstRectTmp = {   0,   0, 320, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // SKILLDEX 1/2
-    srcRectTmp = { 452,   5, 250, 190 };
-    dstRectTmp = {   0,   0, 160, 190 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // SKILLDEX 2/2
-    srcRectTmp = { 452, 190, 250, 180 };
-    dstRectTmp = { 160,  40, 160, 180 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // MAIN
-    srcRectTmp = { 400,  25, 215, 220 };
-    dstRectTmp = {  55,   0, 215, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // PAUSE
-    srcRectTmp = { 240,  72, 160, 215 };
-    dstRectTmp = {  55,   0, 215, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // PAUSE CONFIRM
-    srcRectTmp = { 100, 120, 320, 215 };
-    dstRectTmp = {  55,   0, 215, 215 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // DIALOG_TOP
-    srcRectTmp = {  80,   0, 480, 300 };
-    dstRectTmp = {   0,   0, 400, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // DIALOG_BOTTOM
-    srcRectTmp = {  80, 300, 480, 180 };
-    dstRectTmp = {   0,   0, 320, 180 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // DIALOG_BOTTOM_LEFT
-    srcRectTmp = {   0, 260,  80, 220 };
-    dstRectTmp = {   0,   0, 320, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-
-    // DIALOG_BOTTOM_RIGHT
-    srcRectTmp = { 560, 260,  80, 220 };
-    dstRectTmp = {   0,   0, 320, 240 };
-    addTextureInfo(&textureInfos, &numTextureInfos, &srcRectTmp, &dstRectTmp);
-#endif
-
     return true;
 }
 
@@ -526,7 +425,6 @@ static void destroyRenderer()
         SDL_DestroyRenderer(gSdlRenderer2);
         gSdlRenderer2 = NULL;
     }
-    free(textureInfos);
 #endif
 }
 
@@ -540,14 +438,11 @@ void renderPresent()
 {
     SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
 #ifdef __3DS__
-
-// top screen
-
+/* top screen */
     SDL_Rect sourceRect;
     SDL_Rect destRect;
 
     SDL_RenderClear(gSdlRenderer);
-
 
     switch (ctr_display.active)
     {
@@ -568,22 +463,27 @@ void renderPresent()
         }
         case ctr_display_t::DISPLAY_DIALOG:
         {
-            TextureInfo* textureInfo = &textureInfos[10];
-            sourceRect = textureInfo->srcRect;
-            destRect   = textureInfo->dstRect;
+            std::vector<DisplayRect>& dialogRects = displayRectMap[ctr_display_t::DISPLAY_DIALOG_TOP];
+            if (!dialogRects.empty()) {
+                const DisplayRect& firstRect = dialogRects.front();
+                sourceRect = firstRect.srcRect;
+                destRect = firstRect.dstRect;
+                SDL_RenderCopy(gSdlRenderer, gSdlTexture, &sourceRect, &destRect);
+
+                const DisplayRect& secondRect = dialogRects[1];
+                sourceRect = secondRect.srcRect;
+                destRect = secondRect.dstRect;
+            }
             break;
         }
         default:
             switch (currentInput)
             {
                 case ctr_input_t::INPUT_TOUCH:
+                case ctr_input_t::INPUT_QTM:
+                case ctr_input_t::INPUT_CPAD:
                 {
                     sourceRect = { offsetX, offsetY, 400, 240 };
-                    break;
-                }
-                case ctr_input_t::INPUT_QTM:
-                {
-                    sourceRect = { qtm_offsetX, qtm_offsetY, 400, 240 };
                     break;
                 }
                 default:
@@ -594,15 +494,14 @@ void renderPresent()
             destRect = { 0, 0, 400, 240 };
             break;
     }
+
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, &sourceRect, &destRect);
     SDL_RenderPresent(gSdlRenderer);
 
-
-// bottom screen
-    SDL_RenderClear(gSdlRenderer2);
+/* bottom screen */
     SDL_BlitSurface(gSdlTextureSurface, &sourceRect2, surface2, &destRect2);
-
     SDL_Texture* surfaceTexture2 = SDL_CreateTextureFromSurface(gSdlRenderer2, surface2);
+    SDL_RenderClear(gSdlRenderer2);
 
     switch (ctr_display.active)
     {
@@ -611,69 +510,31 @@ void renderPresent()
             SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, NULL, NULL);
             break;
         }
-        case ctr_display_t::DISPLAY_FIELD:
-        {
-            TextureInfo* textureInfo = &textureInfos[0];
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            break;
-        }
-        case ctr_display_t::DISPLAY_GUI:
-        {
-            for (int i = 1; i < 4; ++i) {
-                TextureInfo* textureInfo = &textureInfos[i];
-                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            }
-            break;
-        }
         case ctr_display_t::DISPLAY_SPLASH:
         case ctr_display_t::DISPLAY_MOVIE:
         {
-//            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, NULL, NULL);
-            break;
-        }
-        case ctr_display_t::DISPLAY_SKILLDEX:
-        {
-            for (int i = 5; i < 7; ++i) {
-                TextureInfo* textureInfo = &textureInfos[i];
-                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            }
-            break;
-        }
-        case ctr_display_t::DISPLAY_MAIN:
-        {
-            TextureInfo* textureInfo = &textureInfos[7];
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            break;
-        }
-        case ctr_display_t::DISPLAY_PAUSE:
-        {
-            TextureInfo* textureInfo = &textureInfos[8];
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            break;
-        }
-        case ctr_display_t::DISPLAY_PAUSE_CONFIRM:
-        {
-            TextureInfo* textureInfo = &textureInfos[9];
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
             break;
         }
         case ctr_display_t::DISPLAY_DIALOG:
         {
-            TextureInfo* textureInfo = &textureInfos[11];
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
-            break;
+            std::vector<DisplayRect>& dialogRects = displayRectMap[ctr_display_t::DISPLAY_DIALOG_BACK];
+            if (!dialogRects.empty()) {
+                const DisplayRect& firstRect = dialogRects.front();
+                sourceRect = firstRect.srcRect;
+                destRect = firstRect.dstRect;
+                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &sourceRect, &destRect);
+            }
         }
+
         default:
-            for (int i = 0; i < numTextureInfos; ++i) {
-                TextureInfo* textureInfo = &textureInfos[i];
-                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &textureInfo->srcRect, &textureInfo->dstRect);
+            std::vector<DisplayRect>& displayRects = displayRectMap[ctr_display.active];
+            for (const DisplayRect& displayRect : displayRects) {
+                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &displayRect.srcRect, &displayRect.dstRect);
             }
             break;
     }
-            SDL_RenderPresent(gSdlRenderer2);
 
-
-
+    SDL_RenderPresent(gSdlRenderer2);
     SDL_DestroyTexture(surfaceTexture2);
 #else
     SDL_RenderClear(gSdlRenderer);

@@ -105,11 +105,6 @@ int gmovie_save(DB_FILE* stream)
 // 0x44E690
 int gmovie_play(int game_movie, int game_movie_flags)
 {
-#ifdef __3DS__
-//    int previousDisplay = currentDisplay;
-//    currentDisplay = ctr_display_t::DISPLAY_MOVIE;
-setDisplay(ctr_display_t::DISPLAY_MOVIE);
-#endif
     dir_entry de;
     char movieFilePath[COMPAT_MAX_PATH];
 
@@ -119,9 +114,6 @@ setDisplay(ctr_display_t::DISPLAY_MOVIE);
 
     if (db_dir_entry(movieFilePath, &de) != 0) {
         debug_printf("\ngmovie_play() - Error: Unable to open %s\n", movie_list[game_movie]);
-#ifdef __3DS__
-//        currentDisplay = previousDisplay;
-#endif
         return -1;
     }
 
@@ -138,10 +130,6 @@ setDisplay(ctr_display_t::DISPLAY_MOVIE);
         0,
         WINDOW_MODAL);
     if (win == -1) {
-#ifdef __3DS__
-//        currentDisplay = previousDisplay;
-//setDisplay(ctr_display_t::DISPLAY_FULL);
-#endif
         return -1;
     }
 
@@ -150,6 +138,10 @@ setDisplay(ctr_display_t::DISPLAY_MOVIE);
     } else if ((game_movie_flags & GAME_MOVIE_PAUSE_MUSIC) != 0) {
         gsound_background_pause();
     }
+
+#ifdef __3DS__
+    setActiveDisplay(ctr_display_t::DISPLAY_MOVIE);
+#endif
 
     win_draw(win);
 
@@ -266,9 +258,7 @@ setDisplay(ctr_display_t::DISPLAY_MOVIE);
         palette_fade_to(cmap);
     }
 #ifdef __3DS__
-//    currentDisplay = previousDisplay;
-//currentDisplay = ctr_display_t::DISPLAY_FULL;
-//setDisplay(ctr_display_t::DISPLAY_FULL);
+    ctr_display.active = ctr_display.previous;
 #endif
     return 0;
 }

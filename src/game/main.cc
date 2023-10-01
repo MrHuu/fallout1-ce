@@ -111,8 +111,8 @@ int gnw_main(int argc, char** argv)
 
         while (!done) {
 #ifdef __3DS__
-        if (ctr_display.active != ctr_display_t::DISPLAY_MAIN)
-            setDisplay(ctr_display_t::DISPLAY_MAIN);
+            if (ctr_display.active != ctr_display_t::DISPLAY_MAIN)
+                setActiveDisplay(ctr_display_t::DISPLAY_MAIN);
 #endif
             kb_clear();
             gsound_background_play_level_music("07desert", 11);
@@ -131,7 +131,7 @@ int gnw_main(int argc, char** argv)
                 main_menu_hide(true);
                 main_menu_destroy();
 #ifdef __3DS__
-                setDisplay(ctr_display_t::DISPLAY_FULL);
+                setActiveDisplay(ctr_display_t::DISPLAY_FULL);
 #endif
                 if (select_character() == 2) {
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
@@ -162,7 +162,7 @@ int gnw_main(int argc, char** argv)
                     main_menu_destroy();
                     gsound_background_stop();
 #ifdef __3DS__
-                    setDisplay(ctr_display_t::DISPLAY_FULL);
+                    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
 #endif
                     // NOTE: Uninline.
                     main_loadgame_new();

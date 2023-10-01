@@ -1471,7 +1471,13 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
     text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
 
     win_draw(win);
-
+#ifdef __3DS__
+    ctr_sys_swkbd("", copy, text);
+    buf_fill(windowBuffer + windowWidth * y + x, nameWidth, text_height(), windowWidth, backgroundColor);
+    text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
+    renderPresent();
+    int rc = 0;
+#else
     beginTextInput();
 
     int blinkingCounter = 3;
@@ -1543,7 +1549,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
         copy[nameLength] = '\0';
         strcpy(text, copy);
     }
-
+#endif
     return rc;
 }
 

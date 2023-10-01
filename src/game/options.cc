@@ -388,12 +388,13 @@ int do_options()
         debug_printf("\nOPTION MENU: Error loading option dialog data!\n");
         return -1;
     }
-#ifdef __3DS__
-setDisplay(ctr_display_t::DISPLAY_PAUSE);
-//    currentDisplay = ctr_display_t::DISPLAY_PAUSE;
-#endif
+
     int rc = -1;
     while (rc == -1) {
+#ifdef __3DS__
+            if (ctr_display.active != ctr_display_t::DISPLAY_PAUSE)
+                setActiveDisplay(ctr_display_t::DISPLAY_PAUSE);
+#endif
         sharedFpsLimiter.mark();
 
         int keyCode = get_input();
@@ -414,6 +415,9 @@ setDisplay(ctr_display_t::DISPLAY_PAUSE);
             case KEY_UPPERCASE_S:
             case KEY_LOWERCASE_S:
             case 500:
+#ifdef __3DS__
+setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
                 if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
                 }
@@ -421,6 +425,9 @@ setDisplay(ctr_display_t::DISPLAY_PAUSE);
             case KEY_UPPERCASE_L:
             case KEY_LOWERCASE_L:
             case 501:
+#ifdef __3DS__
+setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
                 if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
                 }
@@ -430,6 +437,9 @@ setDisplay(ctr_display_t::DISPLAY_PAUSE);
                 gsound_play_sfx_file("ib1p1xx1");
                 // FALLTHROUGH
             case 502:
+#ifdef __3DS__
+setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
                 // PREFERENCES
                 showPreferences = true;
                 break;
@@ -466,7 +476,6 @@ setDisplay(ctr_display_t::DISPLAY_PAUSE);
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-//    currentDisplay = ctr_display_t::DISPLAY_FULL;
 setPreviousAsCurrent();
 #endif
     OptnEnd();

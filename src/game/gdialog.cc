@@ -835,7 +835,7 @@ int scr_dialogue_init(int headFid, int reaction)
     gdDialogWentOff = true;
 
 #ifdef __3DS__
-    setDisplay(ctr_display_t::DISPLAY_DIALOG);
+    setActiveDisplay(ctr_display_t::DISPLAY_DIALOG);
 #endif
 
     return 0;
@@ -913,7 +913,7 @@ int scr_dialogue_exit()
 
     gdDialogWentOff = true;
 #ifdef __3DS__
-setPreviousAsCurrent();
+ctr_display.active = ctr_display.previous;
 #endif
     return 0;
 }
@@ -2052,7 +2052,9 @@ static void head_bk()
         dialogue_switch_mode = 0;
         talk_to_destroy_barter_win();
         talk_to_create_dialogue_win();
-
+#ifdef __3DS__
+    setActiveDisplay(ctr_display_t::DISPLAY_DIALOG); // only when returning from barter
+#endif
         // NOTE: Uninline.
         gdialog_unhide();
 
@@ -2893,6 +2895,9 @@ static void dialogue_barter_cleanup_tables()
 // 0x440EC4
 static void talk_to_pressed_barter(int btn, int keyCode)
 {
+#ifdef __3DS__
+    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
     if (PID_TYPE(dialog_target->pid) != OBJ_TYPE_CRITTER) {
         return;
     }
@@ -2932,6 +2937,9 @@ static void talk_to_pressed_barter(int btn, int keyCode)
 // 0x440FB4
 static void talk_to_pressed_about(int btn, int keyCode)
 {
+#ifdef __3DS__
+    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
     MessageListItem mesg;
     int reaction;
     int reaction_level;
@@ -2975,6 +2983,9 @@ static void talk_to_pressed_about(int btn, int keyCode)
 // NOTE: Uncollapsed 0x445CA0 with different signature.
 static void talk_to_pressed_review(int btn, int keyCode)
 {
+#ifdef __3DS__
+    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+#endif
     gdialog_review();
 }
 

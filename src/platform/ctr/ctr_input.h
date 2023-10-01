@@ -1,11 +1,11 @@
 #ifndef FALLOUT_PLATFORM_CTR_INPUT_H_
 #define FALLOUT_PLATFORM_CTR_INPUT_H_
 
+#include <3ds.h>
+
 #include "plib/gnw/svga.h"
 
 namespace fallout {
-
-#include <3ds.h>
 
 #define SINGLE_CLICK(x) kHeld & x && (!(oldpad & x))
 
@@ -18,23 +18,15 @@ namespace fallout {
 extern int offsetX;
 extern int offsetY;
 
-extern float qtm_offsetX;
-extern float qtm_offsetY;
-
-extern float touchX;
-extern float touchY;
-
-extern int lastTouchX;
-extern int lastTouchY;
+extern int currentInput;
 
 extern u32 kHeld;
-
-extern int currentInput;
 
 typedef struct
 {
     enum active_input_t { 
         INPUT_TOUCH = 0,
+        INPUT_CPAD,
         INPUT_QTM,
         INPUT_LAST
     };
@@ -51,7 +43,6 @@ typedef struct
     int multiplier;
 }qtm_state_t;
 extern qtm_state_t qtm_state;
-
 
 void ctr_init_qtm();
 void ctr_exit_qtm();
