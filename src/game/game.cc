@@ -58,7 +58,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -585,7 +585,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
 
             int mode = -1;
 #ifdef __3DS__
-            setActiveDisplay(ctr_display_t::DISPLAY_SKILLDEX);
+            setActiveRectMap(DISPLAY_SKILLDEX);
 #endif
             // NOTE: There is an `inc` for this value to build jump table which
             // is not needed.
@@ -625,14 +625,11 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             }
 
             if (mode != -1) {
-#ifdef __3DS__
-            setActiveDisplay(ctr_display_t::DISPLAY_FIELD);
-#endif
                 gmouse_set_cursor(MOUSE_CURSOR_USE_CROSSHAIR);
                 gmouse_3d_set_mode(mode);
             }
 #ifdef __3DS__
-            setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+   setActiveRectMap(DISPLAY_FULL);
 #endif
         }
         break;

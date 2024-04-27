@@ -119,7 +119,11 @@ static void audioEngineMixin(void* userData, Uint8* stream, int length)
 
 bool audioEngineInit()
 {
+#ifdef __3DS__
+    if (SDL_Init(SDL_INIT_AUDIO) == -1) {
+#else
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) == -1) {
+#endif
         return false;
     }
 

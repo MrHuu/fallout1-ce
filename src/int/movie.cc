@@ -315,7 +315,9 @@ static void movie_MVE_ShowFrame(SDL_Surface* surface, int srcWidth, int srcHeigh
 
     SDL_SetSurfacePalette(surface, gSdlSurface->format->palette);
     SDL_BlitSurface(surface, &srcRect, gSdlSurface, &destRect);
+#ifndef __3DS__
     SDL_BlitSurface(gSdlSurface, NULL, gSdlTextureSurface, NULL);
+#endif
     renderPresent();
 }
 

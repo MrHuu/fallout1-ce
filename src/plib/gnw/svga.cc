@@ -32,16 +32,6 @@ SDL_Renderer* gSdlRenderer = NULL;
 SDL_Texture* gSdlTexture = NULL;
 SDL_Surface* gSdlTextureSurface = NULL;
 
-#ifdef __3DS__
-SDL_Window* gSdlWindow2 = NULL;
-SDL_Renderer* gSdlRenderer2 = NULL;
-
-SDL_Rect sourceRect2 = {0, 0, 640, 480};
-SDL_Rect destRect2 = {0, 0, 320, 240};
-
-SDL_Surface* surface2 = SDL_CreateRGBSurface(0, 640, 480, 32, 0, 0, 0, 0);
-#endif
-
 // TODO: Remove once migration to update-render cycle is completed.
 FpsLimiter sharedFpsLimiter;
 
@@ -182,6 +172,10 @@ static int GNW95_init_mode(int width, int height)
 // 0x4CAEDC
 int GNW95_init_window(int width, int height, bool fullscreen, int scale)
 {
+#ifdef __3DS__
+    ctr_gfx_init();
+    ctr_rectmap_init();
+#else
     if (gSdlWindow == NULL) {
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
@@ -195,28 +189,8 @@ int GNW95_init_window(int width, int height, bool fullscreen, int scale)
             windowFlags |= SDL_WINDOW_FULLSCREEN;
         }
 
-#ifdef __3DS__
-        initializeDisplayRectMap();
-
-        int numDisplays = SDL_GetNumVideoDisplays();
-        if (numDisplays < 2) {
-            SDL_Quit();
-            return 1;
-        }
-
-        SDL_Rect displayBounds1, displayBounds2;
-        SDL_GetDisplayBounds(0, &displayBounds1);
-        SDL_GetDisplayBounds(1, &displayBounds2);
-
-        gSdlWindow = SDL_CreateWindow("GFX_TOP", displayBounds1.x, displayBounds1.y, 400, 240, 0);
-        gSdlWindow2 = SDL_CreateWindow("GFX_BOTTOM", displayBounds2.x, displayBounds2.y, 320, 240, 0);
-#else
         gSdlWindow = SDL_CreateWindow(GNW95_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width * scale, height * scale, windowFlags);
-#endif
         if (gSdlWindow == NULL) {
-#ifdef __3DS__
-            GNWSystemError("SDL_CreateWindow failed\n");
-#endif
             return -1;
         }
 
@@ -225,13 +199,10 @@ int GNW95_init_window(int width, int height, bool fullscreen, int scale)
 
             SDL_DestroyWindow(gSdlWindow);
             gSdlWindow = NULL;
-#ifdef __3DS__
-            GNWSystemError("createRenderer failed\n");
-#endif
             return -1;
         }
     }
-
+#endif
     return 0;
 }
 
@@ -291,7 +262,9 @@ void GNW95_SetPaletteEntries(unsigned char* palette, int start, int count)
         }
 
         SDL_SetPaletteColors(gSdlSurface->format->palette, colors, start, count);
+#ifndef __3DS__
         SDL_BlitSurface(gSdlSurface, NULL, gSdlTextureSurface, NULL);
+#endif
     }
 }
 
@@ -309,7 +282,9 @@ void GNW95_SetPalette(unsigned char* palette)
         }
 
         SDL_SetPaletteColors(gSdlSurface->format->palette, colors, 0, 256);
+#ifndef __3DS__
         SDL_BlitSurface(gSdlSurface, NULL, gSdlTextureSurface, NULL);
+#endif
     }
 }
 
@@ -332,11 +307,12 @@ unsigned char* GNW95_GetPalette()
     return palette;
 }
 
+
 // 0x4CB850
 void GNW95_ShowRect(unsigned char* src, unsigned int srcPitch, unsigned int a3, unsigned int srcX, unsigned int srcY, unsigned int srcWidth, unsigned int srcHeight, unsigned int destX, unsigned int destY)
 {
     buf_to_buf(src + srcPitch * srcY + srcX, srcWidth, srcHeight, srcPitch, (unsigned char*)gSdlSurface->pixels + gSdlSurface->pitch * destY + destX, gSdlSurface->pitch);
-
+#ifndef __3DS__
     SDL_Rect srcRect;
     srcRect.x = destX;
     srcRect.y = destY;
@@ -347,6 +323,7 @@ void GNW95_ShowRect(unsigned char* src, unsigned int srcPitch, unsigned int a3, 
     destRect.x = destX;
     destRect.y = destY;
     SDL_BlitSurface(gSdlSurface, &srcRect, gSdlTextureSurface, &destRect);
+#endif
 }
 
 int screenGetWidth()
@@ -368,24 +345,16 @@ int screenGetVisibleHeight()
 
 static bool createRenderer(int width, int height)
 {
-#ifdef __3DS__
+#ifndef __3DS__
     gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
-    gSdlRenderer2 = SDL_CreateRenderer(gSdlWindow2, -1, 0);
-#else
-    gSdlRenderer = SDL_CreateRenderer(gSdlWindow, -1, 0);
-#endif
     if (gSdlRenderer == NULL) {
         return false;
     }
-#ifdef __3DS__
-    if (SDL_RenderSetLogicalSize(gSdlRenderer, 400, 240) != 0) {
-        return false;
-    }
-#else
+
     if (SDL_RenderSetLogicalSize(gSdlRenderer, width, height) != 0) {
         return false;
     }
-#endif
+
     gSdlTexture = SDL_CreateTexture(gSdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (gSdlTexture == NULL) {
         return false;
@@ -400,12 +369,16 @@ static bool createRenderer(int width, int height)
     if (gSdlTextureSurface == NULL) {
         return false;
     }
-
+#endif
     return true;
 }
 
 static void destroyRenderer()
 {
+#ifdef __3DS__
+    ctr_gfx_exit();
+    ctr_rectmap_exit();
+#else
     if (gSdlTextureSurface != NULL) {
         SDL_FreeSurface(gSdlTextureSurface);
         gSdlTextureSurface = NULL;
@@ -420,11 +393,6 @@ static void destroyRenderer()
         SDL_DestroyRenderer(gSdlRenderer);
         gSdlRenderer = NULL;
     }
-#ifdef __3DS__
-    if (gSdlRenderer2 != NULL) {
-        SDL_DestroyRenderer(gSdlRenderer2);
-        gSdlRenderer2 = NULL;
-    }
 #endif
 }
 
@@ -436,107 +404,10 @@ void handleWindowSizeChanged()
 
 void renderPresent()
 {
-    SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
 #ifdef __3DS__
-/* top screen */
-    SDL_Rect sourceRect;
-    SDL_Rect destRect;
-
-    SDL_RenderClear(gSdlRenderer);
-
-    switch (ctr_display.active)
-    {
-        case ctr_display_t::DISPLAY_SPLASH:
-        case ctr_display_t::DISPLAY_MAIN:
-        case ctr_display_t::DISPLAY_PAUSE:
-        case ctr_display_t::DISPLAY_SKILLDEX:
-        {
-            sourceRect = {    0,   0, 640, 480 };
-            destRect   = {   40,   0, 320, 240 };
-            break;
-        }
-        case ctr_display_t::DISPLAY_MOVIE:
-        {
-			sourceRect = { 105,  80, 430, 320 };
-            destRect   = {  40,   0, 320, 240 };
-            break;
-        }
-        case ctr_display_t::DISPLAY_DIALOG:
-        {
-            std::vector<DisplayRect>& dialogRects = displayRectMap[ctr_display_t::DISPLAY_DIALOG_TOP];
-            if (!dialogRects.empty()) {
-                const DisplayRect& firstRect = dialogRects.front();
-                sourceRect = firstRect.srcRect;
-                destRect = firstRect.dstRect;
-                SDL_RenderCopy(gSdlRenderer, gSdlTexture, &sourceRect, &destRect);
-
-                const DisplayRect& secondRect = dialogRects[1];
-                sourceRect = secondRect.srcRect;
-                destRect = secondRect.dstRect;
-            }
-            break;
-        }
-        default:
-            switch (currentInput)
-            {
-                case ctr_input_t::INPUT_TOUCH:
-                case ctr_input_t::INPUT_QTM:
-                case ctr_input_t::INPUT_CPAD:
-                {
-                    sourceRect = { offsetX, offsetY, 400, 240 };
-                    break;
-                }
-                default:
-                    sourceRect = { 0, 0, 400, 240 };
-                    break;
-            }
-
-            destRect = { 0, 0, 400, 240 };
-            break;
-    }
-
-    SDL_RenderCopy(gSdlRenderer, gSdlTexture, &sourceRect, &destRect);
-    SDL_RenderPresent(gSdlRenderer);
-
-/* bottom screen */
-    SDL_BlitSurface(gSdlTextureSurface, &sourceRect2, surface2, &destRect2);
-    SDL_Texture* surfaceTexture2 = SDL_CreateTextureFromSurface(gSdlRenderer2, surface2);
-    SDL_RenderClear(gSdlRenderer2);
-
-    switch (ctr_display.active)
-    {
-        case ctr_display_t::DISPLAY_FULL:
-        {
-            SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, NULL, NULL);
-            break;
-        }
-        case ctr_display_t::DISPLAY_SPLASH:
-        case ctr_display_t::DISPLAY_MOVIE:
-        {
-            break;
-        }
-        case ctr_display_t::DISPLAY_DIALOG:
-        {
-            std::vector<DisplayRect>& dialogRects = displayRectMap[ctr_display_t::DISPLAY_DIALOG_BACK];
-            if (!dialogRects.empty()) {
-                const DisplayRect& firstRect = dialogRects.front();
-                sourceRect = firstRect.srcRect;
-                destRect = firstRect.dstRect;
-                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &sourceRect, &destRect);
-            }
-        }
-
-        default:
-            std::vector<DisplayRect>& displayRects = displayRectMap[ctr_display.active];
-            for (const DisplayRect& displayRect : displayRects) {
-                SDL_RenderCopy(gSdlRenderer2, surfaceTexture2, &displayRect.srcRect, &displayRect.dstRect);
-            }
-            break;
-    }
-
-    SDL_RenderPresent(gSdlRenderer2);
-    SDL_DestroyTexture(surfaceTexture2);
+    drawRectMap(gSdlSurface);
 #else
+    SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
     SDL_RenderClear(gSdlRenderer);
     SDL_RenderCopy(gSdlRenderer, gSdlTexture, NULL, NULL);
     SDL_RenderPresent(gSdlRenderer);

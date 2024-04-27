@@ -45,6 +45,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define INVENTORY_WINDOW_X 80
@@ -1232,7 +1236,28 @@ bool setup_inventory(int inventoryWindowType)
     bool isoWasEnabled = map_disable_bk_processes();
 
     gmouse_disable(0);
-
+#ifdef __3DS__
+    switch (inventoryWindowType) {
+        case INVENTORY_WINDOW_TYPE_NORMAL:
+            setActiveRectMap(DISPLAY_INVENTORY);
+            break;
+        case INVENTORY_WINDOW_TYPE_USE_ITEM_ON:
+            setActiveRectMap(DISPLAY_INVENTORY_USE);
+            break;
+        case INVENTORY_WINDOW_TYPE_LOOT:
+            setActiveRectMap(DISPLAY_INVENTORY_LOOT);
+            break;
+        case INVENTORY_WINDOW_TYPE_TRADE:
+            setActiveRectMap(DISPLAY_INVENTORY_TRADE);
+            break;
+        case INVENTORY_WINDOW_TYPE_MOVE_ITEMS:
+            setActiveRectMap(DISPLAY_INVENTORY_MOVE);
+            break;
+        case INVENTORY_WINDOW_TYPE_SET_TIMER:
+            setActiveRectMap(DISPLAY_INVENTORY_TIMER);
+            break;
+	}
+#endif
     return isoWasEnabled;
 }
 
@@ -1880,6 +1905,9 @@ void inven_exit()
     inventry_msg_unload();
 
     inven_is_initialized = 0;
+#ifdef __3DS__
+    ctr_rectMap.active = ctr_rectMap.previous;
+#endif
 }
 
 // 0x4643EC

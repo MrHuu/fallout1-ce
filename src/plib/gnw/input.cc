@@ -1098,15 +1098,14 @@ void GNW95_process_message()
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
 #ifdef __3DS__
-        if ((e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION) && (currentInput==ctr_input_t::INPUT_TOUCH) ){
+        if ((currentInput==ctr_input_t::INPUT_TOUCH)&&(e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION)) {
             int touchX = e.tfinger.x * 320;
             int touchY = e.tfinger.y * 240;
 
             offsetX = (int)touchX * MAX_OFFSET_X / 320;
-            offsetY = (int)touchY * MAX_OFFSET_Y / 240;
+            offsetY = 240-((int)touchY * MAX_OFFSET_Y / 240);
         }
 #endif
-
         switch (e.type) {
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:

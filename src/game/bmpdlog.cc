@@ -22,7 +22,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -152,7 +152,7 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
     }
 
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_PAUSE_CONFIRM);
+    setActiveRectMap(DISPLAY_PAUSE_CONFIRM);
 #endif
 
     int maximumLineWidth = 0;
@@ -506,7 +506,9 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
         art_ptr_unlock(upButtonHandle);
         message_exit(&messageList);
     }
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FIELD);
+#endif
     return rc;
 }
 

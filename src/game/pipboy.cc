@@ -35,6 +35,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define PIPBOY_RAND_MAX 32767
@@ -541,7 +545,10 @@ int pipboy(int intent)
 
     while (true) {
         sharedFpsLimiter.mark();
-
+#ifdef __3DS__
+        if (ctr_rectMap.active != DISPLAY_PIPBOY)
+            setActiveRectMap(DISPLAY_PIPBOY);
+#endif
         int keyCode = get_input();
 
         if (intent == PIPBOY_OPEN_INTENT_REST) {
@@ -595,7 +602,9 @@ int pipboy(int intent)
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FULL);
+#endif
     EndPipboy();
 
     return 0;

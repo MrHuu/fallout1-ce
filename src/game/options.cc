@@ -33,7 +33,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -392,8 +392,8 @@ int do_options()
     int rc = -1;
     while (rc == -1) {
 #ifdef __3DS__
-            if (ctr_display.active != ctr_display_t::DISPLAY_PAUSE)
-                setActiveDisplay(ctr_display_t::DISPLAY_PAUSE);
+        if (ctr_rectMap.active != DISPLAY_PAUSE)
+            setActiveRectMap(DISPLAY_PAUSE);
 #endif
         sharedFpsLimiter.mark();
 
@@ -416,7 +416,7 @@ int do_options()
             case KEY_LOWERCASE_S:
             case 500:
 #ifdef __3DS__
-setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+                setActiveRectMap(DISPLAY_FULL);
 #endif
                 if (SaveGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
@@ -426,7 +426,7 @@ setActiveDisplay(ctr_display_t::DISPLAY_FULL);
             case KEY_LOWERCASE_L:
             case 501:
 #ifdef __3DS__
-setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+                setActiveRectMap(DISPLAY_FULL);
 #endif
                 if (LoadGame(LOAD_SAVE_MODE_NORMAL) == 1) {
                     rc = 1;
@@ -438,7 +438,7 @@ setActiveDisplay(ctr_display_t::DISPLAY_FULL);
                 // FALLTHROUGH
             case 502:
 #ifdef __3DS__
-setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+                setActiveRectMap(DISPLAY_FULL);
 #endif
                 // PREFERENCES
                 showPreferences = true;
@@ -476,7 +476,7 @@ setActiveDisplay(ctr_display_t::DISPLAY_FULL);
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-setPreviousAsCurrent();
+    setActiveRectMap(DISPLAY_FULL);
 #endif
     OptnEnd();
 

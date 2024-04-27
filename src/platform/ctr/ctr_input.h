@@ -3,6 +3,8 @@
 
 #include <3ds.h>
 
+#include "ctr_rectmap.h"
+
 #include "plib/gnw/svga.h"
 
 namespace fallout {
@@ -17,6 +19,9 @@ namespace fallout {
 
 extern int offsetX;
 extern int offsetY;
+
+extern int offsetX_field;
+extern int offsetY_field;
 
 extern int currentInput;
 
@@ -47,6 +52,8 @@ extern qtm_state_t qtm_state;
 void ctr_init_qtm();
 void ctr_exit_qtm();
 void ctr_input_frame();
+
+void convertTouchToTextureCoordinates(rectMap_e activeDisplayRectMap, int tmp_touchX, int tmp_touchY, int* originalX, int* originalY);
 
 int ctr_sys_swkbd(const char *hintText, const char *inText, char *outText);
 

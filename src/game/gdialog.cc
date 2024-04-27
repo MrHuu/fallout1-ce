@@ -42,7 +42,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -835,7 +835,7 @@ int scr_dialogue_init(int headFid, int reaction)
     gdDialogWentOff = true;
 
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_DIALOG);
+    setActiveRectMap(DISPLAY_DIALOG);
 #endif
 
     return 0;
@@ -913,7 +913,7 @@ int scr_dialogue_exit()
 
     gdDialogWentOff = true;
 #ifdef __3DS__
-ctr_display.active = ctr_display.previous;
+ctr_rectMap.active = ctr_rectMap.previous;
 #endif
     return 0;
 }
@@ -1624,7 +1624,11 @@ static void gDialogProcessHighlight(int index)
 
     optionRect.ulx = 0;
     optionRect.uly = dialogOptionEntry->field_14;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 391;
+#endif
     if (index < gdNumOptions - 1) {
         optionRect.lry = dialogBlock.options[index + 1].field_14 - 1;
     } else {
@@ -1633,8 +1637,11 @@ static void gDialogProcessHighlight(int index)
     gDialogRefreshOptionsRect(gOptionWin, &optionRect);
 
     optionRect.ulx = 5;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 388;
-
+#endif
     int color = colorTable[32747] | 0x2000000;
     if (perk_level(PERK_EMPATHY)) {
         color = colorTable[32747] | 0x2000000;
@@ -1663,7 +1670,11 @@ static void gDialogProcessHighlight(int index)
         color);
 
     optionRect.ulx = 0;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 391;
+#endif
     optionRect.uly = dialogOptionEntry->field_14;
     win_draw_rect(gOptionWin, &optionRect);
 }
@@ -1675,7 +1686,11 @@ static void gDialogProcessUnHighlight(int index)
 
     optionRect.ulx = 0;
     optionRect.uly = dialogOptionEntry->field_14;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 391;
+#endif
     if (index < gdNumOptions - 1) {
         optionRect.lry = dialogBlock.options[index + 1].field_14 - 1;
     } else {
@@ -1703,8 +1718,11 @@ static void gDialogProcessUnHighlight(int index)
     }
 
     optionRect.ulx = 5;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 388;
-
+#endif
     // NOTE: Uninline.
     text_to_rect_wrapped(win_get_buf(gOptionWin),
         &optionRect,
@@ -1713,8 +1731,11 @@ static void gDialogProcessUnHighlight(int index)
         text_height(),
         393,
         color);
-
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 391;
+#endif
     optionRect.uly = dialogOptionEntry->field_14;
     optionRect.ulx = 0;
     win_draw_rect(gOptionWin, &optionRect);
@@ -1725,7 +1746,11 @@ static void gDialogProcessReply()
 {
     replyRect.ulx = 5;
     replyRect.uly = 10;
+#ifdef __3DS__
     replyRect.lrx = 374;
+#else
+    replyRect.lrx = 374;
+#endif
     replyRect.lry = 58;
 
     // NOTE: There is an unused if condition.
@@ -1754,7 +1779,11 @@ static void gDialogProcessUpdate()
 
     optionRect.ulx = 5;
     optionRect.uly = 5;
+#ifdef __3DS__
+    optionRect.lrx = 340;
+#else
     optionRect.lrx = 388;
+#endif
     optionRect.lry = 112;
 
     demo_copy_title(gReplyWin);
@@ -2053,7 +2082,7 @@ static void head_bk()
         talk_to_destroy_barter_win();
         talk_to_create_dialogue_win();
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_DIALOG); // only when returning from barter
+    setActiveRectMap(DISPLAY_DIALOG); // only when returning from barter
 #endif
         // NOTE: Uninline.
         gdialog_unhide();
@@ -2292,6 +2321,10 @@ static int gdialog_review()
         renderPresent();
         sharedFpsLimiter.throttle();
     }
+
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_DIALOG); // only when returning from review
+#endif
 
     if (gdialog_review_exit(&win) == -1) {
         return -1;
@@ -2896,7 +2929,7 @@ static void dialogue_barter_cleanup_tables()
 static void talk_to_pressed_barter(int btn, int keyCode)
 {
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FULL);
 #endif
     if (PID_TYPE(dialog_target->pid) != OBJ_TYPE_CRITTER) {
         return;
@@ -2938,7 +2971,7 @@ static void talk_to_pressed_barter(int btn, int keyCode)
 static void talk_to_pressed_about(int btn, int keyCode)
 {
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FULL);
 #endif
     MessageListItem mesg;
     int reaction;
@@ -2984,7 +3017,7 @@ static void talk_to_pressed_about(int btn, int keyCode)
 static void talk_to_pressed_review(int btn, int keyCode)
 {
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FULL);
 #endif
     gdialog_review();
 }
@@ -3877,6 +3910,9 @@ static void about_loop()
     strcpy(dialogBlock.replyText, about_restore_string);
     dialogue_switch_mode = 0;
     talk_to_create_dialogue_win();
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_DIALOG); // only when returning from about
+#endif
     gdialog_unhide();
     gDialogProcessReply();
 }

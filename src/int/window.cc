@@ -515,10 +515,6 @@ bool windowActivateRegion(const char* regionName, int a2)
 // 0x4A39F8
 int getInput()
 {
-#ifdef __3DS__
-    return 0;
-#endif
-
     // 0x508764
     static int said_quit = 1;
 

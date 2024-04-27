@@ -40,6 +40,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define RENDER_ALL_STATS 7
@@ -656,7 +660,13 @@ int editor_design(bool isCreationMode)
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
-
+#ifdef __3DS__
+//        if (!isCreationMode) {
+//            if (ctr_rectMap.active != DISPLAY_CHARACTER) {
+//                setActiveRectMap(DISPLAY_CHARACTER);
+//            }
+//        }
+#endif
         frame_time = get_time();
         int keyCode = get_input();
 
@@ -771,7 +781,11 @@ int editor_design(bool isCreationMode)
             palette_fade_to(black_palette);
         }
     }
-
+#ifdef __3DS__
+    if (!isCreationMode) {
+        setActiveRectMap(DISPLAY_FULL);
+    }
+#endif
     CharEditEnd();
 
     if (rc == 1) {

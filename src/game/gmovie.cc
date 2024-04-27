@@ -22,7 +22,7 @@
 #include "plib/gnw/touch.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -140,7 +140,7 @@ int gmovie_play(int game_movie, int game_movie_flags)
     }
 
 #ifdef __3DS__
-    setActiveDisplay(ctr_display_t::DISPLAY_MOVIE);
+    setActiveRectMap(DISPLAY_MOVIE);
 #endif
 
     win_draw(win);
@@ -258,7 +258,8 @@ int gmovie_play(int game_movie, int game_movie_flags)
         palette_fade_to(cmap);
     }
 #ifdef __3DS__
-    ctr_display.active = ctr_display.previous;
+    setActiveRectMap(DISPLAY_FULL);
+//    ctr_rectMap.active = ctr_rectMap.previous;
 #endif
     return 0;
 }

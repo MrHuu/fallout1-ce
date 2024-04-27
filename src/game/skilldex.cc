@@ -26,7 +26,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -120,10 +120,6 @@ static int fontsave;
 // 0x499560
 int skilldex_select()
 {
-#ifdef __3DS__
-//    int previousDisplay = currentDisplay;
-//    currentDisplay = ctr_display_t::DISPLAY_SKILLDEX;
-#endif
     if (skilldex_start() == -1) {
         debug_printf("\n ** Error loading skilldex dialog data! **\n");
         return -1;
@@ -153,9 +149,6 @@ int skilldex_select()
     }
 
     skilldex_end();
-#ifdef __3DS__
-//currentDisplay = ctr_display_t::DISPLAY_FULL;
-#endif
     return rc;
 }
 

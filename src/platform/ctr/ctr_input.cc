@@ -3,49 +3,13 @@
 
 #include "ctr_input.h"
 #include "ctr_gfx.h"
+
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/mouse.h"
 #include "game/map.h"
 
 namespace fallout {
-
-ctr_input_t ctr_input;
-
-int offsetX = 0;
-int offsetY = 0;
-
-u32 qtm_pos;
-u32 qtm_x, qtm_y;
-bool qtm_usable;
-QTM_HeadTrackingInfo qtminfo;
-
-qtm_state_t qtm_state;
-int currentInput = ctr_input_t::INPUT_TOUCH;
-
-static uint32_t oldpad = 0;
-u32 kHeld;
-
-int speedDivider = 2;
-int deadzone = 15;
-bool relativeMode = true;
-
-void resetCursorPosition();
-
-void ctr_init_qtm()
-{
-    qtmInit();
-    qtm_usable = qtmCheckInitialized();
-    if(!qtm_usable) currentInput = ctr_input_t::INPUT_TOUCH;
-
-resetCursorPosition();
-}
-
-void ctr_exit_qtm()
-{
-    qtm_usable = false;
-    qtmExit();
-}
 
 struct CursorPosition {
     int x;
@@ -54,12 +18,50 @@ struct CursorPosition {
 
 CursorPosition absoluteCursorPosition;
 
-void resetCursorPosition() {
-    absoluteCursorPosition.x = 120;
-    absoluteCursorPosition.y = 120;
+QTM_HeadTrackingInfo qtminfo;
+qtm_state_t qtm_state;
+u32 qtm_pos, qtm_x, qtm_y;
+bool qtm_usable;
+
+static u32 oldpad = 0;
+u32 kHeld;
+
+bool relativeMode = true;
+int speedDivider  = 5;
+int deadzone      = 15;
+
+int offsetX       = 0;
+int offsetY       = 0;
+int offsetX_field = 0;
+int offsetY_field = 0;
+
+int currentInput  = ctr_input_t::INPUT_TOUCH;
+
+void convertTouchToTextureCoordinates(rectMap_e activeDisplayRectMap, int touch_x, int touch_y, int *originalX, int *originalY)
+{
+    for (int i = 0; i < numRectsInMap[activeDisplayRectMap]; ++i) {
+
+    rectMap_t *dstRect = rectMaps[activeDisplayRectMap][i];
+
+        if (touch_x >= dstRect->dst_x && touch_x < (dstRect->dst_x + dstRect->dst_w) &&
+            touch_y >= (240-(dstRect->dst_y+dstRect->dst_h)) && touch_y < (240-dstRect->dst_y)) {
+
+            rectMap_t *srcRect = rectMaps[activeDisplayRectMap][i];
+
+            float x_scale = dstRect->dst_w / srcRect->src_w;
+            float y_scale = dstRect->dst_h / srcRect->src_h;
+
+            float adjusted_touch_x = touch_x  - dstRect->dst_x;
+            float adjusted_touch_y = touch_y - (240-(dstRect->dst_y+dstRect->dst_h));
+
+            *originalX = (adjusted_touch_x / x_scale) + srcRect->src_x;
+            *originalY = (adjusted_touch_y / y_scale) + srcRect->src_y;
+        }
+    }
 }
 
-void updateCursorPosition(s16 deltaX, s16 deltaY, int speedDivider, bool relativeMode, int deadzone) {
+void updateCursorPosition(s16 deltaX, s16 deltaY, int speedDivider, bool relativeMode, int deadzone)
+{
     const int screenWidth = 240;
     const int screenHeight = 240;
 
@@ -100,37 +102,108 @@ void updateCursorPosition(s16 deltaX, s16 deltaY, int speedDivider, bool relativ
     absoluteCursorPosition.y = cursorY;
 }
 
+void resetCursorPosition()
+{
+    absoluteCursorPosition.x = 120;
+    absoluteCursorPosition.y = 120;
+}
+
+void ctr_init_qtm()
+{
+	u8 device_model = 0xFF;
+	CFGU_GetSystemModel(&device_model);
+    if (device_model == CFG_MODEL_N3DS)
+    {
+        qtmInit();
+        qtm_usable = qtmCheckInitialized();
+    }
+    else
+        qtm_usable = false;
+
+    if(!qtm_usable) currentInput = ctr_input_t::INPUT_TOUCH;
+
+    resetCursorPosition();
+}
+
+void ctr_exit_qtm()
+{
+    qtm_usable = false;
+    qtmExit();
+}
+
 void ctr_input_frame()
 {
+    aptMainLoop();
     kHeld = hidKeysHeld();
 
     if ((SINGLE_CLICK(KEY_A)) || (SINGLE_CLICK(KEY_ZL))) {
-        if (ctr_display.active == ctr_display_t::DISPLAY_GUI)
-            setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+        if (ctr_rectMap.active == DISPLAY_FIELD)
+            setActiveRectMap(DISPLAY_GUI);
         else
-            setActiveDisplay(ctr_display_t::DISPLAY_GUI);
+            setActiveRectMap(DISPLAY_FIELD);
     }
 
     if (SINGLE_CLICK(KEY_B)) {
-        setActiveDisplay(ctr_display_t::DISPLAY_FULL);
+        setActiveRectMap(DISPLAY_FULL);
     }
 
     if (SINGLE_CLICK(KEY_Y)) {
-//        ctr_display.active = static_cast<ctr_display_t::active_display_t>((ctr_display.active + 1) % ctr_display_t::DISPLAY_LAST);
+//        ctr_rectMap.active = static_cast<rectMap_e>((ctr_rectMap.active + 1) % DISPLAY_LAST);
     }
 
     if (SINGLE_CLICK(KEY_X)) {
         currentInput = static_cast<ctr_input_t::active_input_t>((currentInput + 1) % (ctr_input_t::INPUT_LAST));
     }
 
-    if(kHeld & KEY_DUP)
-        map_scroll(0, -1);
-    if(kHeld & KEY_DDOWN)
-        map_scroll(0, 1);
-    if(kHeld & KEY_DLEFT)
-        map_scroll(-1, 0);
-    if(kHeld & KEY_DRIGHT)
-        map_scroll(1, 0);
+    if ((ctr_rectMap.active == DISPLAY_FIELD)|| (ctr_rectMap.active == DISPLAY_GUI))
+    {
+        if(kHeld & KEY_DUP)
+        {
+            if (offsetY_field > 0)
+            {
+                offsetY_field -= 10;
+            } else {
+                map_scroll(0, -1);
+            }
+        }
+        if(kHeld & KEY_DDOWN)
+        {
+            if (offsetY_field < 80)
+            {
+                offsetY_field+=10;
+            } else {
+                map_scroll(0, 1);
+            }
+        }
+        if(kHeld & KEY_DLEFT)
+        {
+            if (offsetX_field > 0)
+            {
+                offsetX_field-=10;
+            } else {
+                map_scroll(-1, 0);
+            }
+        }
+        if(kHeld & KEY_DRIGHT)
+        {
+            if (offsetX_field < 140)
+            {
+                offsetX_field+=10;
+            } else {
+                map_scroll(1, 0);
+            }
+        }
+    } else {
+        if(kHeld & KEY_DUP)
+            map_scroll(0, -1);
+        if(kHeld & KEY_DDOWN)
+            map_scroll(0, 1);
+        if(kHeld & KEY_DLEFT)
+            map_scroll(-1, 0);
+        if(kHeld & KEY_DRIGHT)
+            map_scroll(1, 0);
+    }
+
 
     switch (currentInput) {
         case ctr_input_t::INPUT_TOUCH:

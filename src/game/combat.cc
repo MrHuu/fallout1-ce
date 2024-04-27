@@ -42,6 +42,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define CALLED_SHOT_WINDOW_X 108
@@ -4362,7 +4366,10 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
     int eventCode;
     while (true) {
         sharedFpsLimiter.mark();
-
+#ifdef __3DS__
+        if (ctr_rectMap.active != DISPLAY_VATS)
+            setActiveRectMap(DISPLAY_VATS);
+#endif
         eventCode = get_input();
 
         if (eventCode == KEY_ESCAPE) {
@@ -4380,7 +4387,9 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FIELD);
+#endif
     gmouse_enable();
 
     if (gameUiWasDisabled) {

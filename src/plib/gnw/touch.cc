@@ -7,7 +7,7 @@
 
 #ifdef __3DS__
 #include "platform/ctr/ctr_input.h"
-#include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #include "mouse.h"
 #endif
 
@@ -20,7 +20,11 @@ namespace fallout {
 #define MAX_TOUCHES 10
 
 #define TAP_MAXIMUM_DURATION 75
+#ifdef __3DS__
+#define PAN_MINIMUM_MOVEMENT 16
+#else
 #define PAN_MINIMUM_MOVEMENT 4
+#endif
 #define LONG_PRESS_MINIMUM_DURATION 500
 
 struct TouchLocation {
@@ -110,6 +114,20 @@ void touch_handle_start(SDL_TouchFingerEvent* event)
         touch->currentTimestamp = touch->startTimestamp;
         touch->currentLocation = touch->startLocation;
         touch->phase = TOUCH_PHASE_BEGAN;
+
+#ifdef __3DS__
+        int newX = 0;
+        int newY = 0;
+
+        touchPosition touchmove;
+        hidTouchRead(&touchmove);
+
+        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
+
+        touch->startLocation.x = newX;
+        touch->startLocation.y = newY;
+        touch->currentLocation = touch->startLocation;
+#endif
     }
 }
 
@@ -122,6 +140,19 @@ void touch_handle_move(SDL_TouchFingerEvent* event)
         touch->currentLocation.x = static_cast<int>(event->x * screenGetWidth());
         touch->currentLocation.y = static_cast<int>(event->y * screenGetHeight());
         touch->phase = TOUCH_PHASE_MOVED;
+
+#ifdef __3DS__
+        int newX = 0;
+        int newY = 0;
+
+        touchPosition touchmove;
+        hidTouchRead(&touchmove);
+
+        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
+
+        touch->currentLocation.x = newX;
+        touch->currentLocation.y = newY;
+#endif
     }
 }
 
@@ -134,6 +165,19 @@ void touch_handle_end(SDL_TouchFingerEvent* event)
         touch->currentLocation.x = static_cast<int>(event->x * screenGetWidth());
         touch->currentLocation.y = static_cast<int>(event->y * screenGetHeight());
         touch->phase = TOUCH_PHASE_ENDED;
+
+#ifdef __3DS__
+        int newX = 0;
+        int newY = 0;
+
+        touchPosition touchmove;
+        hidTouchRead(&touchmove);
+
+        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
+
+        touch->currentLocation.x = newX;
+        touch->currentLocation.y = newY;
+#endif
     }
 }
 
@@ -285,16 +329,31 @@ void touch_process_gesture()
             touchPosition touch;
             hidTouchRead(&touch);
 
-            switch (ctr_display.active)
+            switch (ctr_rectMap.active)
             {
-                case ctr_display_t::DISPLAY_MAIN:
-                case ctr_display_t::DISPLAY_FIELD:
-                case ctr_display_t::DISPLAY_GUI:
-                case ctr_display_t::DISPLAY_SKILLDEX:
-                case ctr_display_t::DISPLAY_PAUSE:
-                case ctr_display_t::DISPLAY_PAUSE_CONFIRM:
-                case ctr_display_t::DISPLAY_DIALOG:
-                    convertTouchToTextureCoordinates(touch.px, touch.py, ctr_display.active, &newX, &newY);
+                case DISPLAY_GUI:
+                case DISPLAY_SKILLDEX:
+                case DISPLAY_MAIN:
+                case DISPLAY_PAUSE:
+                case DISPLAY_PAUSE_CONFIRM:
+                case DISPLAY_DIALOG:
+                case DISPLAY_INVENTORY:
+                case DISPLAY_INVENTORY_USE:
+                case DISPLAY_INVENTORY_LOOT:
+                case DISPLAY_INVENTORY_TRADE:
+                case DISPLAY_INVENTORY_MOVE:
+                case DISPLAY_INVENTORY_TIMER:
+                case DISPLAY_AUTOMAP:
+                case DISPLAY_WORLDMAP:
+                case DISPLAY_PIPBOY:
+                case DISPLAY_VATS:
+                    convertTouchToTextureCoordinates(ctr_rectMap.active, touch.px, touch.py, &newX, &newY);
+                    break;
+
+                case DISPLAY_FIELD:
+                    convertTouchToTextureCoordinates(ctr_rectMap.active, touch.px, touch.py, &newX, &newY);
+                    newX += offsetX_field;
+                    newY += offsetY_field;
                     break;
 
                 default:
@@ -306,6 +365,7 @@ void touch_process_gesture()
 
                     if (newX > 625) newX = 640;
                     if (newY > 465) newY = 480;
+
                     break;
             }
             mouse_set_position(newX, newY);

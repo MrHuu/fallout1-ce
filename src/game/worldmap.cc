@@ -48,6 +48,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define WM_WINDOW_WIDTH 640
@@ -1147,6 +1151,10 @@ int world_map(WorldMapContext ctx)
         hover = 0;
 
         while (!done) {
+#ifdef __3DS__
+            if (ctr_rectMap.active != DISPLAY_WORLDMAP)
+                setActiveRectMap(DISPLAY_WORLDMAP);
+#endif
             sharedFpsLimiter.mark();
 
             if (is_entering_random_encounter || is_entering_city || is_entering_random_terrain) {
@@ -2291,7 +2299,9 @@ int world_map(WorldMapContext ctx)
                 break;
             }
         }
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FULL);
+#endif
         if (iso_was_disabled) {
             if (bk_enable) {
                 map_enable_bk_processes();

@@ -26,6 +26,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define AUTOMAP_OFFSET_COUNT (AUTOMAP_MAP_COUNT * ELEVATION_COUNT)
@@ -272,6 +276,10 @@ void automap(bool isInGame, bool isUsingScanner)
 
     bool done = false;
     while (!done) {
+#ifdef __3DS__
+        if (ctr_rectMap.active != DISPLAY_AUTOMAP)
+            setActiveRectMap(DISPLAY_AUTOMAP);
+#endif
         sharedFpsLimiter.mark();
 
         bool needsRefresh = false;
@@ -358,7 +366,9 @@ void automap(bool isInGame, bool isUsingScanner)
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FIELD);
+#endif
     if (isoWasEnabled) {
         map_enable_bk_processes();
     }
