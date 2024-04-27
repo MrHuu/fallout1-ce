@@ -239,6 +239,11 @@ void finishRender()
 
 void ctr_gfx_init()
 {
+    if(gspHasGpuRight())
+        gfxExit();
+
+    gfxInitDefault();
+
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
     topRenderTarget = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH16);

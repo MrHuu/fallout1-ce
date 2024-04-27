@@ -62,9 +62,6 @@ static int window_index[MAX_WINDOW_COUNT];
 // 0x6AC1E8
 static Window* window[MAX_WINDOW_COUNT];
 
-// 0x6AC2B0
-static VideoSystemExitProc* video_reset;
-
 // 0x6AC2B4
 static int num_windows;
 
@@ -77,9 +74,6 @@ static bool buffering;
 // 0x6AC2C0
 static int bk_color;
 
-// 0x6AC2C4
-static VideoSystemInitProc* video_set;
-
 // 0x6AC2C8
 static int doing_refresh_all;
 
@@ -87,7 +81,7 @@ static int doing_refresh_all;
 void* GNW_texture;
 
 // 0x4C1CF0
-int win_init(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* videoSystemExitProc, int flags)
+int win_init(VideoOptions* video_options, int flags)
 {
 #ifdef _WIN32
     CloseHandle(GNW95_mutex);
@@ -122,32 +116,16 @@ int win_init(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* vide
         return WINDOW_MANAGER_ERR_INITIALIZING_TEXT_FONTS;
     }
 
-    reset_mode();
-
-    video_set = videoSystemInitProc;
-    video_reset = GNW95_reset_mode;
-
-    int rc = videoSystemInitProc();
-    if (rc == -1) {
-        if (video_reset != NULL) {
-            video_reset();
-        }
+    if (!svga_init(video_options)) {
+        svga_exit();
 
         return WINDOW_MANAGER_ERR_INITIALIZING_VIDEO_MODE;
-    }
-
-    if (rc == 8) {
-        return WINDOW_MANAGER_ERR_8;
     }
 
     if ((flags & 1) != 0) {
         screen_buffer = (unsigned char*)mem_malloc((scr_size.lry - scr_size.uly + 1) * (scr_size.lrx - scr_size.ulx + 1));
         if (screen_buffer == NULL) {
-            if (video_reset != NULL) {
-                video_reset();
-            } else {
-                GNW95_reset_mode();
-            }
+            svga_exit();
 
             return WINDOW_MANAGER_ERR_NO_MEMORY;
         }
@@ -162,11 +140,7 @@ int win_init(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* vide
     if (!initColors()) {
         unsigned char* palette = (unsigned char*)mem_malloc(768);
         if (palette == NULL) {
-            if (video_reset != NULL) {
-                video_reset();
-            } else {
-                GNW95_reset_mode();
-            }
+            svga_exit();
 
             if (screen_buffer != NULL) {
                 mem_free(screen_buffer);
@@ -195,11 +169,7 @@ int win_init(VideoSystemInitProc* videoSystemInitProc, VideoSystemExitProc* vide
 
     Window* w = window[0] = (Window*)mem_malloc(sizeof(*w));
     if (w == NULL) {
-        if (video_reset != NULL) {
-            video_reset();
-        } else {
-            GNW95_reset_mode();
-        }
+        svga_exit();
 
         if (screen_buffer != NULL) {
             mem_free(screen_buffer);
@@ -267,9 +237,7 @@ void win_exit(void)
                 mem_free(screen_buffer);
             }
 
-            if (video_reset != NULL) {
-                video_reset();
-            }
+            svga_exit();
 
             GNW_input_exit();
             GNW_rect_exit();

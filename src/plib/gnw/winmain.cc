@@ -64,13 +64,6 @@ int main(int argc, char* argv[])
 
 #ifdef __3DS__
     osSetSpeedupEnable(true);
-
-    if((SDL_Init(SDL_INIT_VIDEO)==-1)) {
-        printf("Could not initialize SDL: %s.\n", SDL_GetError());
-    }
-    gfxExit();
-
-    gfxInitDefault();
     chdir("sdmc:/3ds/fallout/");
 #endif
 
