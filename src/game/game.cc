@@ -664,7 +664,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
                 gmouse_3d_set_mode(mode);
             }
 #ifdef __3DS__
-   setActiveRectMap(DISPLAY_FULL);
+            setActiveRectMap(DISPLAY_FIELD);
 #endif
         }
         break;

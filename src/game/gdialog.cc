@@ -913,7 +913,7 @@ int scr_dialogue_exit()
 
     gdDialogWentOff = true;
 #ifdef __3DS__
-ctr_rectMap.active = ctr_rectMap.previous;
+    setActiveRectMap(DISPLAY_FIELD);
 #endif
     return 0;
 }
@@ -3872,7 +3872,7 @@ static void about_loop()
 #ifdef __3DS__
     int count = 0;
 
-    ctr_sys_swkbd("", "", about_input_string);
+    ctr_input_swkbd("", "", about_input_string);
 
     while (about_input_string[count] != '\0') {
         count++;

@@ -149,6 +149,7 @@ int skilldex_select()
     }
 
     skilldex_end();
+
     return rc;
 }
 

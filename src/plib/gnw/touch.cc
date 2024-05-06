@@ -109,25 +109,15 @@ void touch_handle_start(SDL_TouchFingerEvent* event)
         touch->used = true;
         touch->fingerId = event->fingerId;
         touch->startTimestamp = event->timestamp;
+#ifdef __3DS__
+        ctr_input_get_touch(&touch->startLocation.x, &touch->startLocation.y);
+#else
         touch->startLocation.x = static_cast<int>(event->x * screenGetWidth());
         touch->startLocation.y = static_cast<int>(event->y * screenGetHeight());
+#endif
         touch->currentTimestamp = touch->startTimestamp;
         touch->currentLocation = touch->startLocation;
         touch->phase = TOUCH_PHASE_BEGAN;
-
-#ifdef __3DS__
-        int newX = 0;
-        int newY = 0;
-
-        touchPosition touchmove;
-        hidTouchRead(&touchmove);
-
-        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
-
-        touch->startLocation.x = newX;
-        touch->startLocation.y = newY;
-        touch->currentLocation = touch->startLocation;
-#endif
     }
 }
 
@@ -137,22 +127,13 @@ void touch_handle_move(SDL_TouchFingerEvent* event)
     if (index != -1) {
         Touch* touch = &(touches[index]);
         touch->currentTimestamp = event->timestamp;
+#ifdef __3DS__
+        ctr_input_get_touch(&touch->currentLocation.x, &touch->currentLocation.y);
+#else
         touch->currentLocation.x = static_cast<int>(event->x * screenGetWidth());
         touch->currentLocation.y = static_cast<int>(event->y * screenGetHeight());
-        touch->phase = TOUCH_PHASE_MOVED;
-
-#ifdef __3DS__
-        int newX = 0;
-        int newY = 0;
-
-        touchPosition touchmove;
-        hidTouchRead(&touchmove);
-
-        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
-
-        touch->currentLocation.x = newX;
-        touch->currentLocation.y = newY;
 #endif
+        touch->phase = TOUCH_PHASE_MOVED;
     }
 }
 
@@ -162,22 +143,13 @@ void touch_handle_end(SDL_TouchFingerEvent* event)
     if (index != -1) {
         Touch* touch = &(touches[index]);
         touch->currentTimestamp = event->timestamp;
+#ifdef __3DS__
+        ctr_input_get_touch(&touch->currentLocation.x, &touch->currentLocation.y);
+#else
         touch->currentLocation.x = static_cast<int>(event->x * screenGetWidth());
         touch->currentLocation.y = static_cast<int>(event->y * screenGetHeight());
-        touch->phase = TOUCH_PHASE_ENDED;
-
-#ifdef __3DS__
-        int newX = 0;
-        int newY = 0;
-
-        touchPosition touchmove;
-        hidTouchRead(&touchmove);
-
-        convertTouchToTextureCoordinates(ctr_rectMap.active, touchmove.px, touchmove.py, &newX, &newY);
-
-        touch->currentLocation.x = newX;
-        touch->currentLocation.y = newY;
 #endif
+        touch->phase = TOUCH_PHASE_ENDED;
     }
 }
 
@@ -322,53 +294,14 @@ void touch_process_gesture()
                 gestureEventsQueue.push(currentGesture);
             }
 #ifdef __3DS__
-            int newX = 0;
-            int newY = 0;
-
+            int newX = -1;
+            int newY = -1;
             mouse_hide();
-            touchPosition touch;
-            hidTouchRead(&touch);
+            ctr_input_get_touch(&newX, &newY);
 
-            switch (ctr_rectMap.active)
-            {
-                case DISPLAY_GUI:
-                case DISPLAY_SKILLDEX:
-                case DISPLAY_MAIN:
-                case DISPLAY_PAUSE:
-                case DISPLAY_PAUSE_CONFIRM:
-                case DISPLAY_DIALOG:
-                case DISPLAY_INVENTORY:
-                case DISPLAY_INVENTORY_USE:
-                case DISPLAY_INVENTORY_LOOT:
-                case DISPLAY_INVENTORY_TRADE:
-                case DISPLAY_INVENTORY_MOVE:
-                case DISPLAY_INVENTORY_TIMER:
-                case DISPLAY_AUTOMAP:
-                case DISPLAY_WORLDMAP:
-                case DISPLAY_PIPBOY:
-                case DISPLAY_VATS:
-                    convertTouchToTextureCoordinates(ctr_rectMap.active, touch.px, touch.py, &newX, &newY);
-                    break;
+            if ((newX != -1) && (newY != -1))
+                mouse_set_position(newX, newY);
 
-                case DISPLAY_FIELD:
-                    convertTouchToTextureCoordinates(ctr_rectMap.active, touch.px, touch.py, &newX, &newY);
-                    newX += offsetX_field;
-                    newY += offsetY_field;
-                    break;
-
-                default:
-                    newX = (touch.px * screenGetWidth()) / 320;
-                    newY = (touch.py * screenGetHeight()) / 240;
-
-                    if (newX < 15) newX = 0;
-                    if (newY < 15) newY = 0;
-
-                    if (newX > 625) newX = 640;
-                    if (newY > 465) newY = 480;
-
-                    break;
-            }
-            mouse_set_position(newX, newY);
             mouse_show();
 #endif
         }

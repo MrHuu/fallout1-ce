@@ -259,7 +259,6 @@ int gmovie_play(int game_movie, int game_movie_flags)
     }
 #ifdef __3DS__
     setActiveRectMap(DISPLAY_FULL);
-//    ctr_rectMap.active = ctr_rectMap.previous;
 #endif
     return 0;
 }

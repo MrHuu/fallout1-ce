@@ -1149,12 +1149,10 @@ int world_map(WorldMapContext ctx)
         gsound_background_play_level_music("03WRLDMP", 12);
 
         hover = 0;
-
-        while (!done) {
 #ifdef __3DS__
-            if (ctr_rectMap.active != DISPLAY_WORLDMAP)
-                setActiveRectMap(DISPLAY_WORLDMAP);
+        setActiveRectMap(DISPLAY_WORLDMAP);
 #endif
+        while (!done) {
             sharedFpsLimiter.mark();
 
             if (is_entering_random_encounter || is_entering_city || is_entering_random_terrain) {
@@ -2300,7 +2298,7 @@ int world_map(WorldMapContext ctx)
             }
         }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FIELD);
 #endif
         if (iso_was_disabled) {
             if (bk_enable) {
@@ -3391,7 +3389,9 @@ WorldMapContext town_map(WorldMapContext ctx)
     bk_enable = map_disable_bk_processes();
     cycle_disable();
     gmouse_set_cursor(MOUSE_CURSOR_ARROW);
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_WORLDMAP);
+#endif
     while (new_ctx.state == -1) {
         sharedFpsLimiter.mark();
 
@@ -3497,7 +3497,9 @@ WorldMapContext town_map(WorldMapContext ctx)
     }
 
     cycle_enable();
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_FIELD);
+#endif
     return new_ctx;
 }
 

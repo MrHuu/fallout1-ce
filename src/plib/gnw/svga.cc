@@ -6,8 +6,8 @@
 #include "plib/gnw/winmain.h"
 
 #ifdef __3DS__
-#include "platform/ctr/ctr_input.h"
 #include "platform/ctr/ctr_gfx.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -101,17 +101,17 @@ bool svga_init(VideoOptions* video_options)
     ctr_rectmap_init();
 
     gSdlSurface = SDL_CreateRGBSurface(0,
-        video_options->width,
-        video_options->height,
-        8,
-        0,
-        0,
-        0,
-        0);
+            video_options->width,
+            video_options->height,
+            8,
+            0,
+            0,
+            0,
+            0);
     if (gSdlSurface == NULL) {
-            GNWSystemError("gSdlSurface failed\n");
-            exit(EXIT_FAILURE);
-	}
+        GNWSystemError("gSdlSurface failed\n");
+        exit(EXIT_FAILURE);
+    }
 #else
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
@@ -265,7 +265,7 @@ void handleWindowSizeChanged()
 void renderPresent()
 {
 #ifdef __3DS__
-    drawRectMap(gSdlSurface);
+    ctr_gfx_draw(gSdlSurface);
 #else
     SDL_UpdateTexture(gSdlTexture, NULL, gSdlTextureSurface->pixels, gSdlTextureSurface->pitch);
     SDL_RenderClear(gSdlRenderer);

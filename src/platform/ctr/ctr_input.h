@@ -3,19 +3,9 @@
 
 #include <3ds.h>
 
-#include "ctr_rectmap.h"
-
 #include "plib/gnw/svga.h"
 
 namespace fallout {
-
-#define SINGLE_CLICK(x) kHeld & x && (!(oldpad & x))
-
-#define MAX_OFFSET_X (640 - 400)
-#define MAX_OFFSET_Y (480 - 240)
-
-#define MAX_OFFSET_X_QTM 120
-#define MAX_OFFSET_Y_QTM 120
 
 extern int offsetX;
 extern int offsetY;
@@ -25,18 +15,26 @@ extern int offsetY_field;
 
 extern int currentInput;
 
-extern u32 kHeld;
+enum active_input_t {
+    INPUT_TOUCH = 0,
+    INPUT_CPAD,
+    INPUT_QTM,
+    INPUT_LAST
+};
 
 typedef struct
 {
-    enum active_input_t { 
-        INPUT_TOUCH = 0,
-        INPUT_CPAD,
-        INPUT_QTM,
-        INPUT_LAST
-    };
+    int touchX;
+    int touchY;
+    u32 kHeld;
+} ctr_input_frame_t;
+
+typedef struct
+{
     active_input_t active;
+    ctr_input_frame_t frame;
 } ctr_input_t;
+
 extern ctr_input_t ctr_input;
 
 typedef struct
@@ -49,13 +47,14 @@ typedef struct
 }qtm_state_t;
 extern qtm_state_t qtm_state;
 
-void ctr_init_qtm();
-void ctr_exit_qtm();
+void ctr_input_get_touch(int *newX, int *newY);
+void ctr_process_message();
 void ctr_input_frame();
 
-void convertTouchToTextureCoordinates(rectMap_e activeDisplayRectMap, int tmp_touchX, int tmp_touchY, int* originalX, int* originalY);
+int ctr_input_swkbd(const char *hintText, const char *inText, char *outText);
 
-int ctr_sys_swkbd(const char *hintText, const char *inText, char *outText);
+void ctr_input_init();
+void ctr_input_exit();
 
 } // namespace fallout
 

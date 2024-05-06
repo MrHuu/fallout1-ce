@@ -3,13 +3,23 @@
 
 #include "ctr_input.h"
 #include "ctr_gfx.h"
+#include "ctr_rectmap.h"
 
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/svga.h"
 #include "plib/gnw/mouse.h"
+#include "plib/gnw/touch.h"
 #include "game/map.h"
 
 namespace fallout {
+
+#define SINGLE_CLICK(x) kHeld & x && (!(oldpad & x))
+
+#define MAX_OFFSET_X (640 - 400)
+#define MAX_OFFSET_Y (480 - 240)
+
+#define MAX_OFFSET_X_QTM 120
+#define MAX_OFFSET_Y_QTM 120
 
 struct CursorPosition {
     int x;
@@ -24,18 +34,19 @@ u32 qtm_pos, qtm_x, qtm_y;
 bool qtm_usable;
 
 static u32 oldpad = 0;
-u32 kHeld;
 
 bool relativeMode = true;
-int speedDivider  = 5;
-int deadzone      = 15;
+int speedDivider = 5;
+int deadzone = 15;
 
-int offsetX       = 0;
-int offsetY       = 0;
-int offsetX_field = 0;
-int offsetY_field = 0;
+int offsetX = 0;
+int offsetY = 0;
+int offsetX_field = 160;
+int offsetY_field = 40;
 
-int currentInput  = ctr_input_t::INPUT_TOUCH;
+int currentInput = INPUT_TOUCH;
+
+ctr_input_t ctr_input;
 
 void convertTouchToTextureCoordinates(rectMap_e activeDisplayRectMap, int touch_x, int touch_y, int *originalX, int *originalY)
 {
@@ -57,6 +68,37 @@ void convertTouchToTextureCoordinates(rectMap_e activeDisplayRectMap, int touch_
             *originalX = (adjusted_touch_x / x_scale) + srcRect->src_x;
             *originalY = (adjusted_touch_y / y_scale) + srcRect->src_y;
         }
+    }
+}
+
+void ctr_input_get_touch(int *newX, int *newY)
+{
+    switch (ctr_rectMap.active)
+    {
+        case DISPLAY_FULL:
+            *newX = (ctr_input.frame.touchX * screenGetWidth()) / 320;
+            *newY = (ctr_input.frame.touchY * screenGetHeight()) / 240;
+
+            if (*newX < 15) *newX = 0;
+            if (*newY < 15) *newY = 0;
+
+            if (*newX > 625) *newX = 640;
+            if (*newY > 465) *newY = 480;
+            break;
+        case DISPLAY_FIELD:
+            convertTouchToTextureCoordinates(ctr_rectMap.active,
+                    ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
+            *newX += offsetX_field;
+            *newY += offsetY_field;
+            break;
+        case DISPLAY_LOADSAVE:
+            convertTouchToTextureCoordinates(DISPLAY_LOADSAVE_SLOT,
+                    ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
+            *newY += getSaveSlotOffset();
+        default:
+            convertTouchToTextureCoordinates(ctr_rectMap.active,
+                    ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
+            break;
     }
 }
 
@@ -110,9 +152,9 @@ void resetCursorPosition()
 
 void ctr_init_qtm()
 {
-	u8 device_model = 0xFF;
-	CFGU_GetSystemModel(&device_model);
-    if (device_model == CFG_MODEL_N3DS)
+    u8 device_model = 0xFF;
+    CFGU_GetSystemModel(&device_model);
+    if ((device_model == CFG_MODEL_N3DS) || (device_model == CFG_MODEL_N3DSXL))
     {
         qtmInit();
         qtm_usable = qtmCheckInitialized();
@@ -120,7 +162,7 @@ void ctr_init_qtm()
     else
         qtm_usable = false;
 
-    if(!qtm_usable) currentInput = ctr_input_t::INPUT_TOUCH;
+    if(!qtm_usable) currentInput = INPUT_TOUCH;
 
     resetCursorPosition();
 }
@@ -131,20 +173,64 @@ void ctr_exit_qtm()
     qtmExit();
 }
 
+void ctr_process_message()
+{
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        if ((currentInput==INPUT_TOUCH) &&
+                (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION)) {
+            int touchX = e.tfinger.x * 320;
+            int touchY = e.tfinger.y * 240;
+
+            offsetX = (int)touchX * MAX_OFFSET_X / 320;
+            offsetY = 240-((int)touchY * MAX_OFFSET_Y / 240);
+
+            ctr_input.frame.touchX = touchX;
+            ctr_input.frame.touchY = touchY;
+        }
+
+        switch (e.type) {
+        case SDL_FINGERDOWN:
+            touch_handle_start(&(e.tfinger));
+            break;
+        case SDL_FINGERMOTION:
+            touch_handle_move(&(e.tfinger));
+            break;
+        case SDL_FINGERUP:
+            touch_handle_end(&(e.tfinger));
+            break;
+
+        case SDL_QUIT:
+            exit(EXIT_SUCCESS);
+            break;
+        }
+    }
+    touch_process_gesture();
+}
+
 void ctr_input_frame()
 {
-    aptMainLoop();
-    kHeld = hidKeysHeld();
+    u32 kHeld = hidKeysHeld();
+    ctr_input.frame.kHeld = kHeld;
 
     if ((SINGLE_CLICK(KEY_A)) || (SINGLE_CLICK(KEY_ZL))) {
-        if (ctr_rectMap.active == DISPLAY_FIELD)
-            setActiveRectMap(DISPLAY_GUI);
-        else
-            setActiveRectMap(DISPLAY_FIELD);
+        if (ctr_rectMap.fullscreen) {
+            ctr_rectMap.fullscreen = false;
+            setActiveRectMap(DISPLAY_LAST);
+        } else {
+            if ((ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI))
+            {
+                if (ctr_rectMap.active == DISPLAY_FIELD)
+                    setActiveRectMap(DISPLAY_GUI);
+                else
+                    setActiveRectMap(DISPLAY_FIELD);
+            }
+        }
     }
 
-    if (SINGLE_CLICK(KEY_B)) {
-        setActiveRectMap(DISPLAY_FULL);
+    if (SINGLE_CLICK(KEY_SELECT)) {
+        ctr_rectMap.fullscreen = true;
+        setActiveRectMap(DISPLAY_LAST);
     }
 
     if (SINGLE_CLICK(KEY_Y)) {
@@ -152,43 +238,34 @@ void ctr_input_frame()
     }
 
     if (SINGLE_CLICK(KEY_X)) {
-        currentInput = static_cast<ctr_input_t::active_input_t>((currentInput + 1) % (ctr_input_t::INPUT_LAST));
+        currentInput = ((currentInput + 1) % (INPUT_LAST));
     }
 
-    if ((ctr_rectMap.active == DISPLAY_FIELD)|| (ctr_rectMap.active == DISPLAY_GUI))
-    {
-        if(kHeld & KEY_DUP)
-        {
-            if (offsetY_field > 0)
-            {
-                offsetY_field -= 10;
+    if ((ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI)) {
+        if(kHeld & KEY_DUP) {
+            if (offsetY_field > 0) {
+                offsetY_field -= 20;
             } else {
                 map_scroll(0, -1);
             }
         }
-        if(kHeld & KEY_DDOWN)
-        {
-            if (offsetY_field < 80)
-            {
-                offsetY_field+=10;
+        if(kHeld & KEY_DDOWN) {
+            if (offsetY_field < 80) {
+                offsetY_field+=20;
             } else {
                 map_scroll(0, 1);
             }
         }
-        if(kHeld & KEY_DLEFT)
-        {
-            if (offsetX_field > 0)
-            {
-                offsetX_field-=10;
+        if(kHeld & KEY_DLEFT) {
+            if (offsetX_field > 0) {
+                offsetX_field-=20;
             } else {
                 map_scroll(-1, 0);
             }
         }
-        if(kHeld & KEY_DRIGHT)
-        {
-            if (offsetX_field < 140)
-            {
-                offsetX_field+=10;
+        if(kHeld & KEY_DRIGHT) {
+            if (offsetX_field < 240) {
+                offsetX_field+=20;
             } else {
                 map_scroll(1, 0);
             }
@@ -204,16 +281,15 @@ void ctr_input_frame()
             map_scroll(1, 0);
     }
 
-
     switch (currentInput) {
-        case ctr_input_t::INPUT_TOUCH:
+        case INPUT_TOUCH:
         {
             if(qtm_usable)
                 ctr_exit_qtm();
 
             break;
         }
-        case ctr_input_t::INPUT_CPAD:
+        case INPUT_CPAD:
         {
             if(qtm_usable)
                 ctr_exit_qtm();
@@ -230,7 +306,7 @@ void ctr_input_frame()
             offsetY = absoluteCursorPosition.y;
             break;
         }
-        case ctr_input_t::INPUT_QTM:
+        case INPUT_QTM:
         {
             if(!qtm_usable)
             {
@@ -288,43 +364,47 @@ void ctr_input_frame()
     oldpad = kHeld;
 }
 
-int ctr_sys_swkbd(const char *hintText, const char *inText, char *outText)
+int ctr_input_swkbd(const char *hintText, const char *inText, char *outText)
 {
-   SwkbdState swkbd;
-   static SwkbdStatusData swkbdStatus;
-   static SwkbdLearningData swkbdLearning;
-   char mybuf[128];
+    SwkbdState swkbd;
+    static SwkbdStatusData swkbdStatus;
+    static SwkbdLearningData swkbdLearning;
+    char mybuf[128];
 
-   swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, -1);
-   swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, 0);
-   swkbdSetInitialText(&swkbd, inText);
-   swkbdSetHintText(&swkbd, hintText);
-   swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Close", false);
-   swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Done", true);
-   swkbdSetFeatures(&swkbd,
-         SWKBD_PREDICTIVE_INPUT | SWKBD_ALLOW_HOME | SWKBD_ALLOW_RESET | SWKBD_ALLOW_POWER);
+    swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, -1);
+    swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, 0);
+    swkbdSetInitialText(&swkbd, inText);
+    swkbdSetHintText(&swkbd, hintText);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_LEFT, "Done", true);
+    swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Close", false);
+    swkbdSetFeatures(&swkbd,
+            SWKBD_PREDICTIVE_INPUT | SWKBD_ALLOW_HOME | SWKBD_ALLOW_RESET | SWKBD_ALLOW_POWER);
 
-   static bool reload = false;
-   swkbdSetStatusData(&swkbd, &swkbdStatus, reload, true);
-   swkbdSetLearningData(&swkbd, &swkbdLearning, reload, true);
-   reload = true;
+    static bool reload = false;
+    swkbdSetStatusData(&swkbd, &swkbdStatus, reload, true);
+    swkbdSetLearningData(&swkbd, &swkbdLearning, reload, true);
+    reload = true;
 
-   SwkbdButton button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
+    SwkbdButton button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
 
-   if (button == SWKBD_BUTTON_LEFT)
-      return -1;
+    if (button == SWKBD_BUTTON_LEFT) {
+        strcpy(outText, mybuf);
+        return 1;
+    } else if (button == SWKBD_BUTTON_RIGHT)
+        return -1;
 
-   else if (button == SWKBD_BUTTON_MIDDLE)
-      return 0;
+    printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
+    return -2;
+}
 
-   else if (button == SWKBD_BUTTON_RIGHT)
-   {
-      strcpy(outText, mybuf);
-      return 1;
-   }
+void ctr_input_init()
+{
+    ctr_init_qtm();
+}
 
-   printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
-   return -2;
+void ctr_input_exit()
+{
+	ctr_exit_qtm();
 }
 
 } // namespace fallout

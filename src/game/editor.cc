@@ -657,16 +657,17 @@ int editor_design(bool isCreationMode)
         }
     }
 
+#ifdef __3DS__
+    if (!isCreationMode) {
+        setPreviousRectMap(0);
+        setActiveRectMap(DISPLAY_CHARACTER);
+    }
+#endif
+
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
-#ifdef __3DS__
-//        if (!isCreationMode) {
-//            if (ctr_rectMap.active != DISPLAY_CHARACTER) {
-//                setActiveRectMap(DISPLAY_CHARACTER);
-//            }
-//        }
-#endif
+
         frame_time = get_time();
         int keyCode = get_input();
 
@@ -783,7 +784,7 @@ int editor_design(bool isCreationMode)
     }
 #ifdef __3DS__
     if (!isCreationMode) {
-        setActiveRectMap(DISPLAY_FULL);
+        setActiveRectMap(getPreviousRectMap(0));
     }
 #endif
     CharEditEnd();
@@ -1486,7 +1487,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
     win_draw(win);
 #ifdef __3DS__
-    ctr_sys_swkbd("", copy, text);
+    ctr_input_swkbd("", copy, text);
     buf_fill(windowBuffer + windowWidth * y + x, nameWidth, text_height(), windowWidth, backgroundColor);
     text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
     renderPresent();

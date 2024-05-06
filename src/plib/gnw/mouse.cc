@@ -439,7 +439,7 @@ void mouse_info()
         case kTap:
             if (gesture.numberOfTouches == 1) {
 #ifdef __3DS__
-                if(kHeld & KEY_R)
+                if(ctr_input.frame.kHeld & KEY_R)
                     mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
                 else
                     mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
@@ -489,7 +489,7 @@ void mouse_info()
     int y;
     int buttons = 0;
 #ifdef __3DS__
-    if(kHeld & KEY_L)
+    if(ctr_input.frame.kHeld & KEY_L)
         buttons |= MOUSE_STATE_RIGHT_BUTTON_DOWN;
 #endif
     MouseData mouseData;

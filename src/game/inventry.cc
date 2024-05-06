@@ -1237,6 +1237,8 @@ bool setup_inventory(int inventoryWindowType)
 
     gmouse_disable(0);
 #ifdef __3DS__
+    setPreviousRectMap(0);
+
     switch (inventoryWindowType) {
         case INVENTORY_WINDOW_TYPE_NORMAL:
             setActiveRectMap(DISPLAY_INVENTORY);
@@ -1250,13 +1252,7 @@ bool setup_inventory(int inventoryWindowType)
         case INVENTORY_WINDOW_TYPE_TRADE:
             setActiveRectMap(DISPLAY_INVENTORY_TRADE);
             break;
-        case INVENTORY_WINDOW_TYPE_MOVE_ITEMS:
-            setActiveRectMap(DISPLAY_INVENTORY_MOVE);
-            break;
-        case INVENTORY_WINDOW_TYPE_SET_TIMER:
-            setActiveRectMap(DISPLAY_INVENTORY_TIMER);
-            break;
-	}
+    }
 #endif
     return isoWasEnabled;
 }
@@ -1906,7 +1902,7 @@ void inven_exit()
 
     inven_is_initialized = 0;
 #ifdef __3DS__
-    ctr_rectMap.active = ctr_rectMap.previous;
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
 }
 
@@ -5135,6 +5131,10 @@ void draw_amount(int value, int inventoryWindowType)
 // 0x469458
 static int do_move_timer(int inventoryWindowType, Object* item, int max)
 {
+#ifdef __3DS__
+    setPreviousRectMap(1);
+    setActiveRectMap(DISPLAY_INVENTORY_MOVE);
+#endif
     setup_move_timer_win(inventoryWindowType, item);
 
     int value;
@@ -5159,6 +5159,9 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max)
         int keyCode = get_input();
         if (keyCode == KEY_ESCAPE) {
             exit_move_timer_win(inventoryWindowType);
+#ifdef __3DS__
+            setActiveRectMap(getPreviousRectMap(1));
+#endif
             return -1;
         }
 
@@ -5229,7 +5232,9 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max)
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(1));
+#endif
     exit_move_timer_win(inventoryWindowType);
 
     return value;

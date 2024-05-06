@@ -49,6 +49,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define LOAD_SAVE_SIGNATURE "FALLOUT SAVE FILE"
@@ -461,6 +465,11 @@ int SaveGame(int mode)
         break;
     }
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_LOADSAVE);
+#endif
+
     ShowSlotList(0);
     DrawInfoBox(slot_cursor);
     win_draw(lsgwin);
@@ -479,7 +488,9 @@ int SaveGame(int mode)
         int scrollDirection = LOAD_SAVE_SCROLL_DIRECTION_NONE;
 
         convertMouseWheelToArrowKey(&keyCode);
-
+#ifdef __3DS__
+        setSaveSlotOffset(slot_cursor);
+#endif
         if (keyCode == KEY_ESCAPE || keyCode == 501 || game_user_wants_to_quit != 0) {
             rc = 0;
         } else {
@@ -750,7 +761,9 @@ int SaveGame(int mode)
                         dialog_out(str0, body, 2, 169, 116, colorTable[32328], NULL, colorTable[32328], DIALOG_BOX_LARGE);
 
                         LSGameEnd(0);
-
+#ifdef __3DS__
+                        setActiveRectMap(getPreviousRectMap(0));
+#endif
                         return -1;
                     }
 
@@ -799,7 +812,9 @@ int SaveGame(int mode)
             quick_done = true;
         }
     }
-
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(0));
+#endif
     return rc;
 }
 
@@ -912,7 +927,10 @@ int LoadGame(int mode)
     }
 
     quick_done = false;
-
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_LOADSAVE);
+#endif
     int windowType;
     switch (mode) {
     case LOAD_SAVE_MODE_FROM_MAIN_MENU:
@@ -1228,7 +1246,9 @@ int LoadGame(int mode)
                 break;
             }
         }
-
+#ifdef __3DS__
+        setSaveSlotOffset(slot_cursor);
+#endif
         renderPresent();
         sharedFpsLimiter.throttle();
     }
@@ -1242,6 +1262,10 @@ int LoadGame(int mode)
             quick_done = true;
         }
     }
+
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(0));
+#endif
 
     return rc;
 }
@@ -2204,7 +2228,7 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
 #ifdef __3DS__
     int rc = 1;
     renderPresent();
-    ctr_sys_swkbd("", text, description);
+    ctr_input_swkbd("", text, description);
     buf_fill(windowBuffer + windowWidth * y + x, text_width(text), lineHeight, windowWidth, backgroundColor);
     text_to_buf(windowBuffer + windowWidth * y + x, text, windowWidth, windowWidth, textColor);
     renderPresent();

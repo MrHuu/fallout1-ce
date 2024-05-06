@@ -16,7 +16,7 @@ bool dxinput_init()
     if (SDL_InitSubSystem(SDL_INIT_EVENTS) != 0) {
         return false;
     }
-
+#ifndef __3DS__
     if (!dxinput_mouse_init()) {
         goto err;
     }
@@ -24,14 +24,15 @@ bool dxinput_init()
     if (!dxinput_keyboard_init()) {
         goto err;
     }
-
+#endif
     return true;
-
+#ifndef __3DS__
 err:
 
     dxinput_mouse_exit();
 
     return false;
+#endif
 }
 
 // 0x4E0478

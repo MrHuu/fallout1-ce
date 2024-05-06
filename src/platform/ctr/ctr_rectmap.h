@@ -16,6 +16,7 @@ typedef enum {
     DISPLAY_FULL,
     DISPLAY_FIELD,
     DISPLAY_GUI,
+    DISPLAY_GUI_INDICATOR,
     DISPLAY_MOVIE,
     DISPLAY_SKILLDEX,
     DISPLAY_AUTOMAP,
@@ -35,17 +36,30 @@ typedef enum {
     DISPLAY_INVENTORY_TIMER,
     DISPLAY_CHARACTER,
     DISPLAY_VATS,
+    DISPLAY_LOADSAVE_TOP,
+    DISPLAY_LOADSAVE,
+    DISPLAY_LOADSAVE_SLOT,
+    DISPLAY_LOADSAVE_BACK,
     DISPLAY_LAST
 } rectMap_e;
 
 struct ctr_rectMap_t {
+    bool fullscreen;
+    rectMap_e main;
     rectMap_e active;
-    rectMap_e previous;
+    rectMap_e prev[2];
 };
 extern ctr_rectMap_t ctr_rectMap;
 
+float getSaveSlotOffset();
+void setSaveSlotOffset(int count);
+
+int getIndicatorSlotNum();
+void setIndicatorSlotNum(int count);
+
 void setActiveRectMap(rectMap_e rectmap);
-void setPreviousRectMap();
+void setPreviousRectMap(int index);
+rectMap_e getPreviousRectMap(int index);
 
 void ctr_rectmap_init();
 void ctr_rectmap_exit();

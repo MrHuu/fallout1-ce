@@ -476,7 +476,7 @@ int do_options()
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FIELD);
 #endif
     OptnEnd();
 

@@ -603,7 +603,7 @@ int pipboy(int intent)
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FULL);
+    setActiveRectMap(DISPLAY_FIELD);
 #endif
     EndPipboy();
 

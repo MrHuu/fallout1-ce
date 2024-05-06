@@ -126,12 +126,10 @@ static unsigned int bk_process_time;
 int GNW_input_init(int use_msec_timer)
 {
 #ifdef __3DS__
-    ctr_init_qtm();
+    ctr_input_init();
 #endif
     if (!dxinput_init()) {
-#ifndef __3DS__
         return -1;
-#endif
     }
 
     if (GNW_kb_set() == -1) {
@@ -171,9 +169,8 @@ int GNW_input_init(int use_msec_timer)
 void GNW_input_exit()
 {
 #ifdef __3DS__
-    ctr_exit_qtm();
+    ctr_input_exit();
 #endif
-
     // NOTE: Uninline.
     GNW95_input_exit();
     GNW_mouse_exit();
@@ -192,13 +189,15 @@ void GNW_input_exit()
 int get_input()
 {
     int v3;
-
+#ifdef __3DS__
+    ctr_process_message();
+#else
     GNW95_process_message();
 
     if (!GNW95_isActive) {
         GNW95_lost_focus();
     }
-
+#endif
     process_bk();
 
     v3 = get_input_buffer();
@@ -1097,15 +1096,6 @@ void GNW95_process_message()
     KeyboardData keyboardData;
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-#ifdef __3DS__
-        if ((currentInput==ctr_input_t::INPUT_TOUCH)&&(e.type == SDL_FINGERDOWN || e.type == SDL_FINGERUP || e.type == SDL_FINGERMOTION)) {
-            int touchX = e.tfinger.x * 320;
-            int touchY = e.tfinger.y * 240;
-
-            offsetX = (int)touchX * MAX_OFFSET_X / 320;
-            offsetY = 240-((int)touchY * MAX_OFFSET_Y / 240);
-        }
-#endif
         switch (e.type) {
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:

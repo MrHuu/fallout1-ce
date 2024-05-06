@@ -37,6 +37,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 // The width of connectors in the indicator box.
@@ -2491,7 +2495,9 @@ int refresh_box_bar_win()
             draw_bboxes(count);
             win_draw(bar_window);
         }
-
+#ifdef __3DS__
+        setIndicatorSlotNum(count);
+#endif
         return count;
     }
 
@@ -2499,7 +2505,9 @@ int refresh_box_bar_win()
         win_delete(bar_window);
         bar_window = -1;
     }
-
+#ifdef __3DS__
+    setIndicatorSlotNum(0);
+#endif
     return 0;
 }
 

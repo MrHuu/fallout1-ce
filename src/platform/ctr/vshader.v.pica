@@ -5,7 +5,6 @@
 
 ; Constants
 .constf myconst(0.0, 1.0, -1.0, 0.1)
-.constf myconst2(0.3, 0.0, 0.0, 0.0)
 .alias  zeros myconst.xxxx ; Vector full of zeros
 .alias  ones  myconst.yyyy ; Vector full of ones
 
@@ -16,8 +15,6 @@
 ; Inputs (defined as aliases for convenience)
 .alias inpos v0
 .alias intex v1
-
-.bool test
 
 .proc main
 	; Force the w component of inpos to be 1.0
