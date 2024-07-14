@@ -331,7 +331,7 @@ static void main_game_loop()
     main_game_paused = 0;
 
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(DISPLAY_GUI);
 #endif
 
     scr_enable();

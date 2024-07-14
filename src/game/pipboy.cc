@@ -543,12 +543,14 @@ int pipboy(int intent)
     mouseGetPositionInWindow(pip_win, &old_mouse_x, &old_mouse_y);
     wait_time = get_time();
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_PIPBOY);
+#endif
+
     while (true) {
         sharedFpsLimiter.mark();
-#ifdef __3DS__
-        if (ctr_rectMap.active != DISPLAY_PIPBOY)
-            setActiveRectMap(DISPLAY_PIPBOY);
-#endif
+
         int keyCode = get_input();
 
         if (intent == PIPBOY_OPEN_INTENT_REST) {
@@ -603,7 +605,7 @@ int pipboy(int intent)
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
     EndPipboy();
 

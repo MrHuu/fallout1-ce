@@ -3498,7 +3498,7 @@ WorldMapContext town_map(WorldMapContext ctx)
 
     cycle_enable();
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(DISPLAY_GUI);
 #endif
     return new_ctx;
 }

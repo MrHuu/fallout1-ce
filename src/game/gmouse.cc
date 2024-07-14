@@ -30,6 +30,7 @@
 
 #ifdef __3DS__
 #include "platform/ctr/ctr_input.h"
+#include "platform/ctr/ctr_rectmap.h"
 #endif
 
 namespace fallout {
@@ -1151,7 +1152,10 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                     case GAME_MOUSE_ACTION_MENU_ITEM_USE_SKILL:
                         if (1) {
                             int skill = -1;
-
+#ifdef __3DS__
+                            setPreviousRectMap(0);
+                            setActiveRectMap(DISPLAY_SKILLDEX);
+#endif
                             int rc = skilldex_select();
                             switch (rc) {
                             case SKILLDEX_RC_SNEAK:
@@ -1179,7 +1183,9 @@ void gmouse_handle_event(int mouseX, int mouseY, int mouseState)
                                 skill = SKILL_REPAIR;
                                 break;
                             }
-
+#ifdef __3DS__
+                            setActiveRectMap(getPreviousRectMap(0));
+#endif
                             if (skill != -1) {
                                 action_use_skill_on(obj_dude, target, skill);
                             }
@@ -2307,7 +2313,75 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
     }
 
     int flags = 0;
+#ifdef __3DS__
+    if (ctr_input.mode == DISPLAY_MODE_ADAPT) {
+        if ((ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI)) {
+            if (y > 380) {
+                return -1;
+            }
 
+            int scroll_border = (ctr_input.frame.kHeld & KEY_TOUCH) ? 10 : 0;
+
+            offsetX_field = rectMaps[DISPLAY_FIELD][0]->src_x;
+            offsetY_field = rectMaps[DISPLAY_FIELD][0]->src_y;
+
+            if (x <= offsetX_field + scroll_border) {
+                if (offsetX_field > 0) {
+                    int move_x = (offsetX_field < 20) ? offsetX_field : 20;
+                    offsetX_field -= move_x;
+                    mouse_simulate_input(-move_x, 0, 0);
+                } else {
+                    flags |= SCROLLABLE_W;
+                }
+            } else if (x >= offsetX_field + rectMaps[DISPLAY_FIELD][0]->src_w - scroll_border) {
+                if (offsetX_field < offsetX_field_scaled_max) {
+                    int move_x = (offsetX_field_scaled_max - offsetX_field < 20) ?
+                            (offsetX_field_scaled_max - offsetX_field) : 20;
+                    offsetX_field += move_x;
+                    mouse_simulate_input(move_x, 0, 0);
+                } else {
+                    flags |= SCROLLABLE_E;
+                }
+            }
+            if (y <= offsetY_field + scroll_border) {
+                if (offsetY_field > 0) {
+                    int move_y = (offsetY_field < 20) ? offsetY_field : 20;
+                    offsetY_field -= move_y;
+                    mouse_simulate_input(0, -move_y, 0);
+                } else {
+                    flags |= SCROLLABLE_N;
+                }
+            } else if (y >= offsetY_field + rectMaps[DISPLAY_FIELD][0]->src_h - scroll_border) {
+                if (offsetY_field < offsetY_field_scaled_max) {
+                    int move_y = (offsetY_field_scaled_max - offsetY_field < 20) ?
+                            (offsetY_field_scaled_max - offsetY_field) : 20;
+                    offsetY_field += move_y;
+                    mouse_simulate_input(0, move_y, 0);
+                } else {
+                    flags |= SCROLLABLE_S;
+                }
+            }
+            rectMaps[DISPLAY_FIELD][0]->src_x = offsetX_field;
+            rectMaps[DISPLAY_FIELD][0]->src_y = offsetY_field;
+        } else if (ctr_rectMap.active == DISPLAY_FULL) {
+            if (x <= scr_size.ulx) {
+                flags |= SCROLLABLE_W;
+            }
+
+            if (x >= scr_size.lrx) {
+                flags |= SCROLLABLE_E;
+            }
+
+            if (y <= scr_size.uly) {
+                flags |= SCROLLABLE_N;
+            }
+
+            if (y >= scr_size.lry) {
+                flags |= SCROLLABLE_S;
+            }
+        }
+    }
+#else
     if (x <= scr_size.ulx) {
         flags |= SCROLLABLE_W;
     }
@@ -2323,7 +2397,7 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
     if (y >= scr_size.lry) {
         flags |= SCROLLABLE_S;
     }
-
+#endif
     int dx = 0;
     int dy = 0;
 

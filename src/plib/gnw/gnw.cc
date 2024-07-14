@@ -1324,6 +1324,9 @@ static int colorClose(void* handle)
 bool GNWSystemError(const char* text)
 {
 #ifdef __3DS__
+    if (!gspHasGpuRight())
+        gfxInitDefault();
+
     errorConf msg;
     errorInit(&msg, ERROR_TEXT, CFG_LANGUAGE_EN);
     errorText(&msg, text);

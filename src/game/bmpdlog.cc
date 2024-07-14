@@ -151,10 +151,6 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
         flags &= ~DIALOG_BOX_0x20;
     }
 
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_PAUSE_CONFIRM);
-#endif
-
     int maximumLineWidth = 0;
     if (hasTitle) {
         maximumLineWidth = text_width(title);
@@ -463,6 +459,12 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
         }
     }
 
+#ifdef __3DS__
+    setPreviousRectMap(1);
+    setRectMapPos(DISPLAY_PAUSE_CONFIRM, x, y, backgroundWidth, backgroundHeight, false);
+    setActiveRectMap(DISPLAY_PAUSE_CONFIRM);
+#endif
+
     win_draw(win);
 
     int rc = -1;
@@ -507,7 +509,10 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
         message_exit(&messageList);
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    if (rc == 1)
+        setIndicatorSlotNum(0);
+
+    setActiveRectMap(getPreviousRectMap(1));
 #endif
     return rc;
 }

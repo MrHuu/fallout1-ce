@@ -660,7 +660,7 @@ int editor_design(bool isCreationMode)
 #ifdef __3DS__
     if (!isCreationMode) {
         setPreviousRectMap(0);
-        setActiveRectMap(DISPLAY_CHARACTER);
+        setActiveRectMap(DISPLAY_CHAR);
     }
 #endif
 
@@ -5464,6 +5464,11 @@ static int perks_dialog()
             perk_description(name_sort_list[crow + cline].value));
     }
 
+#ifdef __3DS__
+    setPreviousRectMap(1);
+    setActiveRectMap(DISPLAY_CHAR_PERK);
+#endif
+
     win_draw(pwin);
 
     int rc = InputPDLoop(count, RedrwDPrks);
@@ -5506,6 +5511,10 @@ static int perks_dialog()
     art_ptr_unlock(backgroundFrmHandle);
 
     win_delete(pwin);
+
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(1));
+#endif
 
     return rc;
 }

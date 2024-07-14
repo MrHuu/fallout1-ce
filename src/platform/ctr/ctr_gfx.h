@@ -18,17 +18,9 @@
 
 namespace fallout {
 
-void drawRect(const float subTexX, const float subTexY, const float subTexW, const float subTexH,
-        const float posX, const float posY, const float newWidth, const float newHeight);
+extern bool isWide;
 
 void ctr_gfx_draw(SDL_Surface* gSdlSurface);
-
-void beginRender(bool vSync);
-void drawTopRenderTarget(uint32_t clearColor);
-void drawBottomRenderTarget(uint32_t clearColor);
-void finishRender();
-
-void initTransferTexture();
 
 void ctr_gfx_init();
 void ctr_gfx_exit();

@@ -388,7 +388,9 @@ int do_options()
         debug_printf("\nOPTION MENU: Error loading option dialog data!\n");
         return -1;
     }
-
+#ifdef __3DS__
+    setPreviousRectMap(0);
+#endif
     int rc = -1;
     while (rc == -1) {
 #ifdef __3DS__
@@ -476,7 +478,8 @@ int do_options()
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+//    setActiveRectMap(getPreviousRectMap(0));
+setActiveRectMap(DISPLAY_GUI);
 #endif
     OptnEnd();
 

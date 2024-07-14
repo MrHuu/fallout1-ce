@@ -9,11 +9,19 @@
 #include "plib/gnw/touch.h"
 #include "plib/gnw/vcr.h"
 
+#ifdef __3DS__
+#include "ctr_input.h"
+#include "ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 static void mouse_colorize();
 static void mouse_anim();
 static void mouse_clip();
+#ifdef __3DS__
+static void ctr_mouse_clip();
+#endif
 
 // The default mouse cursor buffer.
 //
@@ -427,9 +435,7 @@ void mouse_info()
     if (mouse_disabled) {
         return;
     }
-#ifdef __3DS__
-    ctr_input_frame();
-#endif
+
     Gesture gesture;
     if (touch_get_gesture(&gesture)) {
         static int prevx;
@@ -438,14 +444,7 @@ void mouse_info()
         switch (gesture.type) {
         case kTap:
             if (gesture.numberOfTouches == 1) {
-#ifdef __3DS__
-                if(ctr_input.frame.kHeld & KEY_R)
-                    mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
-                else
-                    mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-#else
                 mouse_simulate_input(0, 0, MOUSE_STATE_LEFT_BUTTON_DOWN);
-#endif
             } else if (gesture.numberOfTouches == 2) {
                 mouse_simulate_input(0, 0, MOUSE_STATE_RIGHT_BUTTON_DOWN);
             }
@@ -485,13 +484,15 @@ void mouse_info()
         return;
     }
 
+#ifdef __3DS__
+    if (ctr_input_frame() == 1)
+        return;
+#endif
+
     int x;
     int y;
     int buttons = 0;
-#ifdef __3DS__
-    if(ctr_input.frame.kHeld & KEY_L)
-        buttons |= MOUSE_STATE_RIGHT_BUTTON_DOWN;
-#endif
+
     MouseData mouseData;
     if (dxinput_get_mouse_state(&mouseData)) {
         x = mouseData.x;
@@ -636,8 +637,11 @@ void mouse_simulate_input(int delta_x, int delta_y, int buttons)
 
         mouse_x += delta_x;
         mouse_y += delta_y;
+#ifdef __3DS__
+        ctr_mouse_clip();
+#else
         mouse_clip();
-
+#endif
         win_refresh_all(&mouseRect);
 
         mouse_show();
@@ -714,6 +718,36 @@ static void mouse_clip()
         mouse_y = scr_size.lry - mouse_hoty;
     }
 }
+
+#ifdef __3DS__
+static void ctr_mouse_clip()
+{
+    if (ctr_input.mode == DISPLAY_MODE_ADAPT) {
+        int src_x = rectMaps[DISPLAY_FIELD][0]->src_x;
+        int src_y = rectMaps[DISPLAY_FIELD][0]->src_y;
+        int src_w = rectMaps[DISPLAY_FIELD][0]->src_w;
+        int src_h = rectMaps[DISPLAY_FIELD][0]->src_h;
+
+        if ((ctr_rectMap.active == DISPLAY_GUI && mouse_hoty + mouse_y <= 380) ||
+                ctr_rectMap.active == DISPLAY_FIELD) {
+            if (mouse_hotx + mouse_x < src_x) {
+                mouse_x = src_x - mouse_hotx;
+            } else if (mouse_hotx + mouse_x > src_x + src_w) {
+                mouse_x = src_x + src_w - mouse_hotx;
+            }
+
+            if (mouse_hoty + mouse_y < src_y) {
+                mouse_y = src_y - mouse_hoty;
+            } else if (mouse_hoty + mouse_y > src_y + src_h) {
+                mouse_y = src_y + src_h - mouse_hoty;
+            }
+            return;
+        }
+    }
+
+    mouse_clip();
+}
+#endif
 
 // 0x4B5328
 int mouse_get_buttons()

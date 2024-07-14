@@ -476,9 +476,9 @@ int SaveGame(int mode)
     renderPresent();
 
     dbleclkcntr = 24;
-
     int rc = -1;
     int doubleClickSlot = -1;
+
     while (rc == -1) {
         sharedFpsLimiter.mark();
 

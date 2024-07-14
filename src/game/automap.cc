@@ -274,12 +274,13 @@ void automap(bool isInGame, bool isUsingScanner)
     bool isoWasEnabled = map_disable_bk_processes();
     gmouse_set_cursor(MOUSE_CURSOR_ARROW);
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_AUTOMAP);
+#endif
+
     bool done = false;
     while (!done) {
-#ifdef __3DS__
-        if (ctr_rectMap.active != DISPLAY_AUTOMAP)
-            setActiveRectMap(DISPLAY_AUTOMAP);
-#endif
         sharedFpsLimiter.mark();
 
         bool needsRefresh = false;
@@ -367,7 +368,7 @@ void automap(bool isInGame, bool isUsingScanner)
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
     if (isoWasEnabled) {
         map_enable_bk_processes();

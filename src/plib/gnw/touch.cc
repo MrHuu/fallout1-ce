@@ -296,13 +296,14 @@ void touch_process_gesture()
 #ifdef __3DS__
             int newX = -1;
             int newY = -1;
-            mouse_hide();
+
             ctr_input_get_touch(&newX, &newY);
-
-            if ((newX != -1) && (newY != -1))
+            if ((newX != -1) || (newY != -1))
+            {
+                mouse_hide();
                 mouse_set_position(newX, newY);
-
-            mouse_show();
+                mouse_show();
+            }
 #endif
         }
     }

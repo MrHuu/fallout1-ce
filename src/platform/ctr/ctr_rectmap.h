@@ -11,6 +11,13 @@ typedef struct {
 extern rectMap_t ***rectMaps;
 extern int *numRectsInMap;
 
+enum active_display_mode_e {
+    DISPLAY_MODE_ADAPT = 0,
+    DISPLAY_MODE_FULL_BOT,
+    DISPLAY_MODE_FULL_TOP,
+    DISPLAY_MODE_LAST
+};
+
 typedef enum {
     DISPLAY_SPLASH = 0,
     DISPLAY_FULL,
@@ -18,6 +25,7 @@ typedef enum {
     DISPLAY_GUI,
     DISPLAY_GUI_INDICATOR,
     DISPLAY_MOVIE,
+    DISPLAY_MOVIE_SUB,
     DISPLAY_SKILLDEX,
     DISPLAY_AUTOMAP,
     DISPLAY_WORLDMAP,
@@ -34,17 +42,19 @@ typedef enum {
     DISPLAY_INVENTORY_TRADE,
     DISPLAY_INVENTORY_MOVE,
     DISPLAY_INVENTORY_TIMER,
-    DISPLAY_CHARACTER,
+    DISPLAY_CHAR,
+    DISPLAY_CHAR_PERK_TOP,
+    DISPLAY_CHAR_PERK,
     DISPLAY_VATS,
     DISPLAY_LOADSAVE_TOP,
     DISPLAY_LOADSAVE,
     DISPLAY_LOADSAVE_SLOT,
     DISPLAY_LOADSAVE_BACK,
+    DISPLAY_ELEVATOR,
     DISPLAY_LAST
 } rectMap_e;
 
 struct ctr_rectMap_t {
-    bool fullscreen;
     rectMap_e main;
     rectMap_e active;
     rectMap_e prev[2];
@@ -56,6 +66,10 @@ void setSaveSlotOffset(int count);
 
 int getIndicatorSlotNum();
 void setIndicatorSlotNum(int count);
+
+void setRectMapPos(rectMap_e rectmap, float x, float y, float w, float h, bool isTop);
+
+int setRectMapScaled(bool scaled_rect_top, float rawScaleFactor);
 
 void setActiveRectMap(rectMap_e rectmap);
 void setPreviousRectMap(int index);

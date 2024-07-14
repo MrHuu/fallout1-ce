@@ -19,6 +19,10 @@
 #include "plib/gnw/rect.h"
 #include "plib/gnw/svga.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 // The maximum number of elevator levels.
@@ -477,7 +481,13 @@ static int elevator_start(int elevator)
         gmouse_set_cursor(MOUSE_CURSOR_ARROW);
         return -1;
     }
+#ifdef __3DS__
+    setRectMapPos(DISPLAY_ELEVATOR, elevatorWindowX, elevatorWindowY,
+            GInfo[ELEVATOR_FRM_BACKGROUND].width, GInfo[ELEVATOR_FRM_BACKGROUND].height, false);
 
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_ELEVATOR);
+#endif
     win_buf = win_get_buf(elev_win);
     memcpy(win_buf, (unsigned char*)grphbmp[ELEVATOR_FRM_BACKGROUND], GInfo[ELEVATOR_FRM_BACKGROUND].width * GInfo[ELEVATOR_FRM_BACKGROUND].height);
 
@@ -517,6 +527,11 @@ static int elevator_start(int elevator)
 // 0x4385C4
 static void elevator_end()
 {
+
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(0));
+#endif
+
     win_delete(elev_win);
 
     if (grphbmp[ELEVATOR_FRM_BACKGROUND] != ELEVATOR_BACKGROUND_NULL) {

@@ -26,7 +26,15 @@ static C3D_Tex spritesheet_tex;
 int activeTexFilter;
 
 ctr_rectMap_t ctr_rectMap;
+
 bool isN3DS;
+bool isWide;
+bool targetTop;
+
+void beginRender(bool vSync);
+void drawTopRenderTarget(uint32_t clearColor);
+void drawBottomRenderTarget(uint32_t clearColor);
+void finishRender();
 
 void setTextureFilter(int linear)
 {
@@ -46,6 +54,14 @@ void setTextureFilter(int linear)
 inline void drawRect(const float subTexX, const float subTexY, const float subTexW, const float subTexH,
         const float posX, const float posY, const float newWidth, const float newHeight)
 {
+    float adjustedPosX = posX;
+    float adjustedNewWidth = newWidth;
+
+    if (targetTop && isWide) {
+        adjustedPosX *= 2.f;
+        adjustedNewWidth *= 2.f;
+    }
+
     C3D_ImmDrawBegin(GPU_TRIANGLE_STRIP);
     {
         const float texW = renderTextureWidth;
@@ -55,19 +71,19 @@ inline void drawRect(const float subTexX, const float subTexY, const float subTe
         const float vertW = 1.f;
 
         // Bottom left corner
-        C3D_ImmSendAttrib(posX, posY, vertZ, vertW);                                   // v0 = position xyzw
+        C3D_ImmSendAttrib(adjustedPosX, posY, vertZ, vertW);                           // v0 = position xyzw
         C3D_ImmSendAttrib(subTexX / texW, 1.f - (subTexY + subTexH) / texH, 0.f, 0.f); // v1 = texcoord uv
 
         // Bottom right corner
-        C3D_ImmSendAttrib(newWidth + posX, posY, vertZ, vertW);
+        C3D_ImmSendAttrib(adjustedNewWidth + adjustedPosX, posY, vertZ, vertW);
         C3D_ImmSendAttrib((subTexX + subTexW) / texW, 1.f - (subTexY + subTexH) / texH, 0.f, 0.f);
 
         // Top left corner
-        C3D_ImmSendAttrib(posX, newHeight + posY, vertZ, vertW);
+        C3D_ImmSendAttrib(adjustedPosX, newHeight + posY, vertZ, vertW);
         C3D_ImmSendAttrib(subTexX / texW, 1.f - subTexY / texH, 0.f, 0.f);
 
         // Top right corner
-        C3D_ImmSendAttrib(newWidth + posX, newHeight + posY, vertZ, vertW);
+        C3D_ImmSendAttrib(adjustedNewWidth + adjustedPosX, newHeight + posY, vertZ, vertW);
         C3D_ImmSendAttrib((subTexX + subTexW) / texW, 1.f - subTexY / texH, 0.f, 0.f);
     }
     C3D_ImmDrawEnd();
@@ -130,17 +146,30 @@ void drawRects()
             break;
 
         case DISPLAY_GUI:
-            drawRect((offsetX_field > 140)?140:offsetX_field, offsetY_field, 480, 300, 0,   0, 400, 240);
+            drawRect(rectMaps[DISPLAY_FIELD][0]->src_x, rectMaps[DISPLAY_FIELD][0]->src_y,
+                    rectMaps[DISPLAY_FIELD][0]->src_w, rectMaps[DISPLAY_FIELD][0]->src_h,
+                    rectMaps[DISPLAY_FIELD][0]->dst_x, rectMaps[DISPLAY_FIELD][0]->dst_y,
+                    rectMaps[DISPLAY_FIELD][0]->dst_w, rectMaps[DISPLAY_FIELD][0]->dst_h);
             break;
 
+        case DISPLAY_CHAR_PERK:
+            drawRect(rectMaps[DISPLAY_CHAR_PERK_TOP][0]->src_x, rectMaps[DISPLAY_CHAR_PERK_TOP][0]->src_y,
+                    rectMaps[DISPLAY_CHAR_PERK_TOP][0]->src_w, rectMaps[DISPLAY_CHAR_PERK_TOP][0]->src_h,
+                    rectMaps[DISPLAY_CHAR_PERK_TOP][0]->dst_x, rectMaps[DISPLAY_CHAR_PERK_TOP][0]->dst_y,
+                    rectMaps[DISPLAY_CHAR_PERK_TOP][0]->dst_w, rectMaps[DISPLAY_CHAR_PERK_TOP][0]->dst_h
+            );
+            break;
+
+        case DISPLAY_CHAR:
         case DISPLAY_AUTOMAP:
         case DISPLAY_WORLDMAP:
         case DISPLAY_PIPBOY:
-        case DISPLAY_CHARACTER:
         case DISPLAY_VATS:
         case DISPLAY_FULL:
-            drawRect(offsetX, (240-offsetY), 400, 240, 0,   0, 400, 240);
-            break;
+            if (ctr_input.mode == DISPLAY_MODE_FULL_BOT) {
+                drawRect(offsetX, (240 - offsetY), 400, 240, 0,   0, 400, 240);
+                break;
+            }
 
         default:
             drawRect(rectMaps[DISPLAY_FULL][0]->src_x, rectMaps[DISPLAY_FULL][0]->src_y,
@@ -155,7 +184,13 @@ void drawRects()
     switch (ctr_rectMap.active)
     {
         case DISPLAY_MOVIE:
-             break;
+            setTextureFilter(1);
+            drawRect(rectMaps[DISPLAY_MOVIE_SUB][0]->src_x, rectMaps[DISPLAY_MOVIE_SUB][0]->src_y,
+                    rectMaps[DISPLAY_MOVIE_SUB][0]->src_w, rectMaps[DISPLAY_MOVIE_SUB][0]->src_h,
+                    rectMaps[DISPLAY_MOVIE_SUB][0]->dst_x, rectMaps[DISPLAY_MOVIE_SUB][0]->dst_y,
+                    rectMaps[DISPLAY_MOVIE_SUB][0]->dst_w, rectMaps[DISPLAY_MOVIE_SUB][0]->dst_h);
+            setTextureFilter(-1);
+            break;
 
         case DISPLAY_SPLASH:
             setTextureFilter(1);
@@ -205,10 +240,6 @@ void drawRects()
             }
             break;
 
-        case DISPLAY_FIELD:
-            drawRect((offsetX_field > 240)?240:offsetX_field, offsetY_field, 400, 300, 0,   0, 320, 240);
-            break;
-
         case DISPLAY_GUI:
             for (int i = 0; i < getIndicatorSlotNum(); i++) {
                 drawRect(rectMaps[DISPLAY_GUI_INDICATOR][i]->src_x, rectMaps[DISPLAY_GUI_INDICATOR][i]->src_y,
@@ -217,6 +248,10 @@ void drawRects()
                         rectMaps[DISPLAY_GUI_INDICATOR][i]->dst_w, rectMaps[DISPLAY_GUI_INDICATOR][i]->dst_h
                 );
             }
+
+        case DISPLAY_FULL:
+            if (ctr_input.mode == DISPLAY_MODE_FULL_TOP)
+                break;
 
         default:
             for (int i = 0; i < numRectsInMap[ctr_rectMap.active]; i++) {
@@ -277,6 +312,7 @@ void drawTopRenderTarget(uint32_t clearColor)
     C3D_RenderTargetClear(topRenderTarget, C3D_CLEAR_ALL, clearColor, 0);
     C3D_FrameDrawOn(topRenderTarget);
     C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &topProjection);
+    targetTop = true;
 }
 
 void drawBottomRenderTarget(uint32_t clearColor)
@@ -284,6 +320,7 @@ void drawBottomRenderTarget(uint32_t clearColor)
     C3D_RenderTargetClear(bottomRenderTarget, C3D_CLEAR_ALL, clearColor, 0);
     C3D_FrameDrawOn(bottomRenderTarget);
     C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &bottomProjection);
+    targetTop = false;
 }
 
 void finishRender()
@@ -298,7 +335,7 @@ void initTransferTexture()
 
     memset(renderTextureData, 0, renderTextureByteCount);
 
-    C3D_TexInit(&spritesheet_tex, renderTextureWidth, renderTextureHeight,  GPU_RGBA8);
+    C3D_TexInitVRAM(&spritesheet_tex, renderTextureWidth, renderTextureHeight, GPU_RGBA8);
 
     setTextureFilter(-1);
 }
@@ -308,14 +345,24 @@ void ctr_gfx_init()
     if(gspHasGpuRight())
         gfxExit();
 
+    u8 is2DS;
+    CFGU_GetModelNintendo2DS(&is2DS);
     APT_CheckNew3DS(&isN3DS);
 
     gfxInitDefault();
 
+    if (is2DS == 1) {
+        gfxSetWide(true);
+        isWide = gfxIsWide();
+    } else
+        isWide = false;
+
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
-    topRenderTarget = C3D_RenderTargetCreate(GSP_SCREEN_WIDTH, GSP_SCREEN_HEIGHT_TOP, GPU_RB_RGBA8, GPU_RB_DEPTH16);
+    topRenderTarget = C3D_RenderTargetCreate(
+            GSP_SCREEN_WIDTH, isWide ? GSP_SCREEN_HEIGHT_TOP_2X : GSP_SCREEN_HEIGHT_TOP, GPU_RB_RGBA8, GPU_RB_DEPTH16);
     C3D_RenderTargetSetOutput(topRenderTarget, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
+
     bottomRenderTarget = C3D_RenderTargetCreate(GSP_SCREEN_WIDTH, GSP_SCREEN_HEIGHT_BOTTOM, GPU_RB_RGBA8, GPU_RB_DEPTH16);
     C3D_RenderTargetSetOutput(bottomRenderTarget, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
@@ -331,8 +378,8 @@ void ctr_gfx_init()
     AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
     AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 2); // v1=texcoord
 
-    Mtx_OrthoTilt(&topProjection, 0, GSP_SCREEN_HEIGHT_TOP, 0, GSP_SCREEN_WIDTH, 0.1f, 1.0f, true);
-    Mtx_OrthoTilt(&bottomProjection, 0, GSP_SCREEN_HEIGHT_BOTTOM, 0, GSP_SCREEN_WIDTH, 0.1f, 1.0f, true);
+    Mtx_OrthoTilt(&topProjection, 0, isWide ? GSP_SCREEN_HEIGHT_TOP_2X : GSP_SCREEN_HEIGHT_TOP, 0, GSP_SCREEN_WIDTH, 0.1f, 1.f, true);
+    Mtx_OrthoTilt(&bottomProjection, 0, GSP_SCREEN_HEIGHT_BOTTOM, 0, GSP_SCREEN_WIDTH, 0.1f, 1.f, true);
 
     initTransferTexture();
 }
@@ -341,6 +388,10 @@ void ctr_gfx_exit()
 {
     shaderProgramFree(&program);
     DVLB_Free(vshader_dvlb);
+
+    C3D_TexDelete(&spritesheet_tex);
+    linearFree(renderTextureData);
+
     C3D_Fini();
 }
 

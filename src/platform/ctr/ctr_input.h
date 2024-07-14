@@ -7,15 +7,7 @@
 
 namespace fallout {
 
-extern int offsetX;
-extern int offsetY;
-
-extern int offsetX_field;
-extern int offsetY_field;
-
-extern int currentInput;
-
-enum active_input_t {
+enum active_input_e {
     INPUT_TOUCH = 0,
     INPUT_CPAD,
     INPUT_QTM,
@@ -31,26 +23,43 @@ typedef struct
 
 typedef struct
 {
-    active_input_t active;
-    ctr_input_frame_t frame;
-} ctr_input_t;
-
-extern ctr_input_t ctr_input;
-
-typedef struct
-{
     int x;
     int y;
     unsigned rel_x;
     unsigned rel_y;
     int multiplier;
-}qtm_state_t;
-extern qtm_state_t qtm_state;
+    QTM_HeadTrackingInfo qtminfo;
+    u32 qtm_x, qtm_y;
+    bool qtm_usable;
+} qtm_state_t;
+
+typedef struct
+{
+    u8 mode;
+    active_input_e input;
+    ctr_input_frame_t frame;
+    qtm_state_t qtm_state;
+} ctr_input_t;
+extern ctr_input_t ctr_input;
+
+extern int offsetX;
+extern int offsetY;
+
+extern float offsetX_field;
+extern float offsetY_field;
+
+extern int offsetX_field_scaled;
+extern int offsetY_field_scaled;
+
+extern float offsetX_field_scaled_max;
+extern float offsetY_field_scaled_max;
+
+extern int currentInput;
 
 void ctr_input_get_touch(int *newX, int *newY);
-void ctr_process_message();
-void ctr_input_frame();
+void ctr_input_process();
 
+int ctr_input_frame();
 int ctr_input_swkbd(const char *hintText, const char *inText, char *outText);
 
 void ctr_input_init();

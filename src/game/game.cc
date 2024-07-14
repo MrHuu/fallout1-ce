@@ -620,6 +620,7 @@ int game_handle_input(int eventCode, bool isInCombatMode)
 
             int mode = -1;
 #ifdef __3DS__
+            setPreviousRectMap(0);
             setActiveRectMap(DISPLAY_SKILLDEX);
 #endif
             // NOTE: There is an `inc` for this value to build jump table which
@@ -658,14 +659,16 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             default:
                 break;
             }
-
+#ifdef __3DS__
+            setActiveRectMap(getPreviousRectMap(0));
+#endif
             if (mode != -1) {
                 gmouse_set_cursor(MOUSE_CURSOR_USE_CROSSHAIR);
                 gmouse_3d_set_mode(mode);
-            }
 #ifdef __3DS__
-            setActiveRectMap(DISPLAY_FIELD);
+                setActiveRectMap(DISPLAY_FIELD);
 #endif
+            }
         }
         break;
     case KEY_UPPERCASE_Z:
@@ -1255,7 +1258,11 @@ static int game_init_databases()
 
     master_db_handle = db_init(main_file_name, NULL, patch_file_name, 1);
     if (master_db_handle == INVALID_DATABASE_HANDLE) {
+#ifdef __3DS__
+        GNWSystemError("Could not find the master datafile.\n\nPlease move 'MASTER.DAT'\nto 'sdmc:/3ds/fallout/'");
+#else
         GNWSystemError("Could not find the master datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+#endif
         return -1;
     }
 
@@ -1272,7 +1279,11 @@ static int game_init_databases()
     critter_db_handle = db_init(main_file_name, NULL, patch_file_name, 1);
     if (critter_db_handle == INVALID_DATABASE_HANDLE) {
         db_select(master_db_handle);
+#ifdef __3DS__
+        GNWSystemError("Could not find the critter datafile.\n\nPlease move 'CRITTER.DAT'\nto 'sdmc:/3ds/fallout/'");
+#else
         GNWSystemError("Could not find the critter datafile. Please make sure the FALLOUT CD is in the drive and that you are running FALLOUT from the directory you installed it to.");
+#endif
         return -1;
     }
 

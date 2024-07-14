@@ -189,9 +189,7 @@ void GNW_input_exit()
 int get_input()
 {
     int v3;
-#ifdef __3DS__
-    ctr_process_message();
-#else
+#ifndef __3DS__
     GNW95_process_message();
 
     if (!GNW95_isActive) {
@@ -224,6 +222,9 @@ void process_bk()
     int v1;
 
     GNW_do_bk_process();
+#ifdef __3DS__
+    ctr_input_process();
+#endif
 
     if (vcr_update() != 3) {
         mouse_info();

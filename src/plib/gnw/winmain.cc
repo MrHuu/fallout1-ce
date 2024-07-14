@@ -18,6 +18,7 @@
 
 #ifdef __3DS__
 #include "3ds.h"
+u32 __stacksize__ = 48 * 1024;
 #endif
 
 namespace fallout {

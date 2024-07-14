@@ -835,6 +835,9 @@ int scr_dialogue_init(int headFid, int reaction)
     gdDialogWentOff = true;
 
 #ifdef __3DS__
+    if ((ctr_rectMap.main == DISPLAY_FIELD) || (ctr_rectMap.main == DISPLAY_GUI)) {
+        setPreviousRectMap(0);
+    }
     setActiveRectMap(DISPLAY_DIALOG);
 #endif
 
@@ -913,7 +916,7 @@ int scr_dialogue_exit()
 
     gdDialogWentOff = true;
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
     return 0;
 }
@@ -2322,10 +2325,6 @@ static int gdialog_review()
         sharedFpsLimiter.throttle();
     }
 
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_DIALOG); // only when returning from review
-#endif
-
     if (gdialog_review_exit(&win) == -1) {
         return -1;
     }
@@ -2490,6 +2489,10 @@ static int gdialog_review_exit(int* win)
     }
 
     text_font(reviewOldFont);
+
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_DIALOG); // only when returning from review
+#endif
 
     if (win == NULL) {
         return -1;

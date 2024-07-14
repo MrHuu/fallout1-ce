@@ -4363,13 +4363,14 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
     gmouse_disable(0);
     gmouse_set_cursor(MOUSE_CURSOR_ARROW);
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_VATS);
+#endif
+
     int eventCode;
     while (true) {
         sharedFpsLimiter.mark();
-#ifdef __3DS__
-        if (ctr_rectMap.active != DISPLAY_VATS)
-            setActiveRectMap(DISPLAY_VATS);
-#endif
         eventCode = get_input();
 
         if (eventCode == KEY_ESCAPE) {
@@ -4388,7 +4389,7 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
     gmouse_enable();
 

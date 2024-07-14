@@ -1237,7 +1237,9 @@ bool setup_inventory(int inventoryWindowType)
 
     gmouse_disable(0);
 #ifdef __3DS__
-    setPreviousRectMap(0);
+    if ((ctr_rectMap.main == DISPLAY_FIELD) || (ctr_rectMap.main == DISPLAY_GUI)) {
+        setPreviousRectMap(0);
+    }
 
     switch (inventoryWindowType) {
         case INVENTORY_WINDOW_TYPE_NORMAL:
