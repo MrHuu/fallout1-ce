@@ -2298,7 +2298,7 @@ int world_map(WorldMapContext ctx)
             }
         }
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_FIELD);
+    setActiveRectMap(DISPLAY_GUI);
 #endif
         if (iso_was_disabled) {
             if (bk_enable) {

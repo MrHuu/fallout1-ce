@@ -58,6 +58,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
+#include "platform/ctr/ctr_input.h"
 #include "platform/ctr/ctr_rectmap.h"
 #endif
 
@@ -425,7 +426,12 @@ void game_exit()
     FMExit();
     windowClose();
     db_exit();
+#ifdef __3DS__
+    gconfig_exit(false); // only save when config is actually changed..
+#else
     gconfig_exit(true);
+#endif
+
 }
 
 // 0x43B748
@@ -665,9 +671,6 @@ int game_handle_input(int eventCode, bool isInCombatMode)
             if (mode != -1) {
                 gmouse_set_cursor(MOUSE_CURSOR_USE_CROSSHAIR);
                 gmouse_3d_set_mode(mode);
-#ifdef __3DS__
-                setActiveRectMap(DISPLAY_FIELD);
-#endif
             }
         }
         break;
@@ -1346,6 +1349,9 @@ static void game_splash_screen()
     mem_free(palette);
 
     config_set_value(&game_config, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_SPLASH_KEY, splash + 1);
+#ifdef __3DS__
+    gconfig_save();
+#endif
 }
 
 } // namespace fallout

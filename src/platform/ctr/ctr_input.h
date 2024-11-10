@@ -10,35 +10,19 @@ namespace fallout {
 enum active_input_e {
     INPUT_TOUCH = 0,
     INPUT_CPAD,
-    INPUT_QTM,
     INPUT_LAST
 };
 
-typedef struct
-{
+typedef struct {
     int touchX;
     int touchY;
     u32 kHeld;
 } ctr_input_frame_t;
 
-typedef struct
-{
-    int x;
-    int y;
-    unsigned rel_x;
-    unsigned rel_y;
-    int multiplier;
-    QTM_HeadTrackingInfo qtminfo;
-    u32 qtm_x, qtm_y;
-    bool qtm_usable;
-} qtm_state_t;
-
-typedef struct
-{
+typedef struct {
     u8 mode;
     active_input_e input;
     ctr_input_frame_t frame;
-    qtm_state_t qtm_state;
 } ctr_input_t;
 extern ctr_input_t ctr_input;
 
@@ -56,14 +40,20 @@ extern float offsetY_field_scaled_max;
 
 extern int currentInput;
 
-void ctr_input_get_touch(int *newX, int *newY);
-void ctr_input_process();
+void ctr_input_center_mouse(void);
 
-int ctr_input_frame();
+void ctr_input_get_touch(int *newX, int *newY);
+void ctr_input_process(void);
+
+int ctr_input_frame(void);
+
+void ctr_input_swkdb_init(void);
 int ctr_input_swkbd(const char *hintText, const char *inText, char *outText);
 
-void ctr_input_init();
-void ctr_input_exit();
+bool ctr_input_key_pressed(void);
+
+void ctr_input_init(void);
+void ctr_input_exit(void);
 
 } // namespace fallout
 

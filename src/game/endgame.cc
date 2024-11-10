@@ -33,6 +33,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 // The maximum number of subtitle lines per slide.
@@ -340,6 +344,11 @@ static int endgame_init()
 
     palette_fade_to(black_palette);
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_ENDGAME);
+#endif
+
     // CE: Every slide has a separate color palette which is incompatible with
     // main color palette. Setup overlay to hide everything.
     gEndgameEndingOverlay = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MOVE_ON_TOP);
@@ -435,6 +444,9 @@ static void endgame_exit()
     if (endgame_map_enabled) {
         map_enable_bk_processes();
     }
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(0));
+#endif
 }
 
 // 0x438D14

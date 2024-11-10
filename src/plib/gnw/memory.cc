@@ -56,7 +56,24 @@ static size_t mem_allocated = 0;
 
 // 0x539D30
 static size_t max_allocated = 0;
-
+#if defined __3DS__ && _DEBUG_OVERLAY
+int get_num_blocks(void)
+{
+    return num_blocks;
+}
+int get_max_blocks(void)
+{
+    return max_blocks;
+}
+size_t get_mem_allocated(void)
+{
+    return mem_allocated;
+}
+size_t get_max_allocated(void)
+{
+    return max_allocated;
+}
+#endif
 // 0x4AEBE0
 char* mem_strdup(const char* string)
 {

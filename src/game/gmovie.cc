@@ -23,6 +23,7 @@
 
 #ifdef __3DS__
 #include "platform/ctr/ctr_rectmap.h"
+#include "platform/ctr/ctr_input.h"
 #endif
 
 namespace fallout {
@@ -198,6 +199,10 @@ int gmovie_play(int game_movie, int game_movie_flags)
     int v11 = 0;
     int buttons;
     do {
+#ifdef __3DS__
+        if (ctr_input_key_pressed())
+            break;
+#endif
         if (!moviePlaying() || game_user_wants_to_quit || get_input() != -1) {
             break;
         }

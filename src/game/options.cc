@@ -858,8 +858,15 @@ static int do_prefscreen()
         return -1;
     }
 
+#ifdef __3DS__
+    setPreviousRectMap(0);
+#endif
     int rc = -1;
     while (rc == -1) {
+#ifdef __3DS__
+        if (ctr_rectMap.active != DISPLAY_OPTIONS)
+            setActiveRectMap(DISPLAY_OPTIONS);
+#endif
         sharedFpsLimiter.mark();
 
         int eventCode = get_input();
@@ -907,7 +914,9 @@ static int do_prefscreen()
     }
 
     PrefEnd();
-
+#ifdef __3DS__
+    setActiveRectMap(getPreviousRectMap(0));
+#endif
     return rc;
 }
 

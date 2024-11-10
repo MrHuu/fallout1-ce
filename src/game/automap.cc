@@ -276,7 +276,9 @@ void automap(bool isInGame, bool isUsingScanner)
 
 #ifdef __3DS__
     setPreviousRectMap(0);
-    setActiveRectMap(DISPLAY_AUTOMAP);
+    setRectMapPos(DISPLAY_DYNAMIC, automapWindowX, automapWindowY,
+            AUTOMAP_WINDOW_WIDTH, AUTOMAP_WINDOW_HEIGHT, false);
+    setActiveRectMap(DISPLAY_DYNAMIC);
 #endif
 
     bool done = false;

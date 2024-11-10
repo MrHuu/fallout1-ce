@@ -7,6 +7,7 @@
 
 #ifdef __3DS__
 #include "3ds.h"
+#include "plib/gnw/debug.h"
 #endif
 
 namespace fallout {
@@ -81,7 +82,11 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_TAUNTS_KEY, 1);
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_LANGUAGE_FILTER_KEY, 0);
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_RUNNING_KEY, 0);
+#ifdef __3DS__
+    config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, 1);
+#else
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_SUBTITLES_KEY, 0);
+#endif
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_COMBAT_SPEED_KEY, 0);
     config_set_value(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_PLAYER_SPEED_KEY, 0);
     config_set_double(&game_config, GAME_CONFIG_PREFERENCES_KEY, GAME_CONFIG_TEXT_BASE_DELAY_KEY, 3.5);
@@ -96,13 +101,25 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SOUNDS_KEY, 1);
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_KEY, 1);
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_KEY, 1);
+#ifdef __3DS__
+    config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MASTER_VOLUME_KEY, 32767);
+    config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_VOLUME_KEY, 32767);
+    config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SNDFX_VOLUME_KEY, 32767);
+    config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_VOLUME_KEY, 32767);
+#else
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MASTER_VOLUME_KEY, 22281);
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_VOLUME_KEY, 22281);
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SNDFX_VOLUME_KEY, 22281);
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_SPEECH_VOLUME_KEY, 22281);
+#endif
     config_set_value(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_CACHE_SIZE_KEY, 448);
+#ifdef __3DS__
+    config_set_string(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "data\\sound\\music\\");
+    config_set_string(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, "data\\sound\\music\\");
+#else
     config_set_string(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH1_KEY, "sound\\music\\");
     config_set_string(&game_config, GAME_CONFIG_SOUND_KEY, GAME_CONFIG_MUSIC_PATH2_KEY, "sound\\music\\");
+#endif
     config_set_string(&game_config, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_MODE_KEY, "environment");
     config_set_value(&game_config, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_TILE_NUM_KEY, 0);
     config_set_value(&game_config, GAME_CONFIG_DEBUG_KEY, GAME_CONFIG_SHOW_SCRIPT_MESSAGES_KEY, 0);
@@ -125,6 +142,20 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
 
 #ifdef __3DS__
     strcpy(gconfig_file_name, "sdmc:/3ds/fallout/fallout.cfg");
+    FILE *file = fopen(gconfig_file_name, "r");
+
+    if (file) {
+        fclose(file);
+        config_load(&game_config, gconfig_file_name, false); // load file, can be incomplete.
+#ifdef _DEBUG
+        debug_printf("gconfig_init: Loading existing config\n");
+#endif
+    } else {
+        config_save(&game_config, gconfig_file_name, false);
+#ifdef _DEBUG
+        debug_printf("gconfig_init: Saving new config\n");
+#endif
+    }
 #else
     // Make `fallout.cfg` file path.
     sep = strrchr(argv[0], '\\');
@@ -135,10 +166,10 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
     } else {
         strcpy(gconfig_file_name, GAME_CONFIG_FILE_NAME);
     }
-#endif
     // Read contents of `fallout.cfg` into config. The values from the file
     // will override the defaults above.
     config_load(&game_config, gconfig_file_name, false);
+#endif
 
     // Add key-values from command line, which overrides both defaults and
     // whatever was loaded from `fallout.cfg`.
@@ -154,6 +185,9 @@ bool gconfig_init(bool isMapper, int argc, char** argv)
 // 0x43DD08
 bool gconfig_save()
 {
+#ifdef __3DS__
+    debug_printf("gconfig_save()\n");
+#endif
     if (!gconfig_initialized) {
         return false;
     }

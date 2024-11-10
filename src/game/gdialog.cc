@@ -55,9 +55,17 @@ namespace fallout {
 #define GAME_DIALOG_REPLY_WINDOW_WIDTH 379
 #define GAME_DIALOG_REPLY_WINDOW_HEIGHT 58
 
+#ifdef __3DS__
+#define GAME_DIALOG_OPTIONS_WINDOW_X 127 + 20
+#else
 #define GAME_DIALOG_OPTIONS_WINDOW_X 127
+#endif
 #define GAME_DIALOG_OPTIONS_WINDOW_Y 335
+#ifdef __3DS__
+#define GAME_DIALOG_OPTIONS_WINDOW_WIDTH 393 - 20
+#else
 #define GAME_DIALOG_OPTIONS_WINDOW_WIDTH 393
+#endif
 #define GAME_DIALOG_OPTIONS_WINDOW_HEIGHT 117
 
 #define GAME_DIALOG_REVIEW_WINDOW_WIDTH 640
@@ -800,7 +808,7 @@ int scr_dialogue_init(int headFid, int reaction)
     text_font(101);
     dialogSetReplyWindow(135, 225, 379, 58, NULL);
     dialogSetReplyColor(0.3f, 0.3f, 0.3f);
-    dialogSetOptionWindow(127, 335, 393, 117, NULL);
+    dialogSetOptionWindow(GAME_DIALOG_OPTIONS_WINDOW_X, 335, GAME_DIALOG_OPTIONS_WINDOW_WIDTH, 117, NULL);
     dialogSetOptionColor(0.2f, 0.2f, 0.2f);
     dialogTitle(NULL);
     dialogRegisterWinDrawCallbacks(demo_copy_title, demo_copy_options);
@@ -1669,7 +1677,7 @@ static void gDialogProcessHighlight(int index)
         dialogOptionEntry->text,
         NULL,
         text_height(),
-        393,
+        GAME_DIALOG_OPTIONS_WINDOW_WIDTH,
         color);
 
     optionRect.ulx = 0;
@@ -1732,7 +1740,7 @@ static void gDialogProcessUnHighlight(int index)
         dialogOptionEntry->text,
         NULL,
         text_height(),
-        393,
+        GAME_DIALOG_OPTIONS_WINDOW_WIDTH,
         color);
 #ifdef __3DS__
     optionRect.lrx = 340;
@@ -1875,7 +1883,7 @@ static void gDialogProcessUpdate()
                 dialogOptionEntry->text,
                 NULL,
                 text_height(),
-                393,
+                GAME_DIALOG_OPTIONS_WINDOW_WIDTH,
                 color);
 
             optionRect.uly += 2;
@@ -2005,7 +2013,7 @@ static void demo_copy_options(int win)
     }
 
     unsigned char* dest = win_get_buf(win);
-    buf_to_buf(src + 640 * (335 - windowRect.uly) + 127, width, height, 640, dest, width);
+    buf_to_buf(src + 640 * (335 - windowRect.uly) + GAME_DIALOG_OPTIONS_WINDOW_X, width, height, 640, dest, width);
 }
 
 // 0x43FACC
@@ -2051,7 +2059,7 @@ static void gDialogRefreshOptionsRect(int win, Rect* drawRect)
     unsigned char* dest = win_get_buf(win);
 
     buf_to_buf(
-        src + (640 * (335 - windowRect.uly) + 127) + (640 * drawRect->uly + drawRect->ulx),
+        src + (640 * (335 - windowRect.uly) + GAME_DIALOG_OPTIONS_WINDOW_X) + (640 * drawRect->uly + drawRect->ulx),
         drawRect->lrx - drawRect->ulx,
         drawRect->lry - drawRect->uly,
         640,
@@ -2083,10 +2091,11 @@ static void head_bk()
         loop_cnt = -1;
         dialogue_switch_mode = 0;
         talk_to_destroy_barter_win();
-        talk_to_create_dialogue_win();
 #ifdef __3DS__
-    setActiveRectMap(DISPLAY_DIALOG); // only when returning from barter
+        setActiveRectMap(DISPLAY_DIALOG); // only when returning from barter
 #endif
+        talk_to_create_dialogue_win();
+
         // NOTE: Uninline.
         gdialog_unhide();
 
@@ -2931,9 +2940,6 @@ static void dialogue_barter_cleanup_tables()
 // 0x440EC4
 static void talk_to_pressed_barter(int btn, int keyCode)
 {
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_FULL);
-#endif
     if (PID_TYPE(dialog_target->pid) != OBJ_TYPE_CRITTER) {
         return;
     }
@@ -2973,9 +2979,6 @@ static void talk_to_pressed_barter(int btn, int keyCode)
 // 0x440FB4
 static void talk_to_pressed_about(int btn, int keyCode)
 {
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_FULL);
-#endif
     MessageListItem mesg;
     int reaction;
     int reaction_level;
@@ -3677,6 +3680,9 @@ static void talk_to_blend_table_exit()
 // 0x442154
 static int about_init()
 {
+#ifdef __3DS__
+    ctr_input_swkdb_init();
+#endif
     int fid;
     CacheEntry* background_key;
     Art* background_frm;
@@ -3740,7 +3746,11 @@ static int about_init()
                                     mesg.num = 100;
                                     if (message_search(&msg_file, &mesg) == 1) {
                                         text_to_buf(about_win_buf + background_width * 57 + 56,
+#ifdef __3DS__
+                                            "Keypad",
+#else
                                             mesg.text,
+#endif
                                             background_width - 56,
                                             background_width,
                                             colorTable[18979]);
@@ -3872,30 +3882,9 @@ static void about_loop()
     if (about_init() != 0) {
         return;
     }
-#ifdef __3DS__
-    int count = 0;
-
-    ctr_input_swkbd("", "", about_input_string);
-
-    while (about_input_string[count] != '\0') {
-        count++;
-    }
-    about_input_index = count;
-//    about_update_display(1);
-
-    while (1) {
-        sharedFpsLimiter.mark();
-
-        if (about_process_input(get_input()) == -1) {
-            break;
-        }
-
-        renderPresent();
-        sharedFpsLimiter.throttle();
-    }
-#else
+#ifndef __3DS__
     beginTextInput();
-
+#endif
     while (1) {
         sharedFpsLimiter.mark();
 
@@ -3906,16 +3895,14 @@ static void about_loop()
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifndef __3DS__
     endTextInput();
 #endif
     about_exit();
     strcpy(dialogBlock.replyText, about_restore_string);
     dialogue_switch_mode = 0;
     talk_to_create_dialogue_win();
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_DIALOG); // only when returning from about
-#endif
+
     gdialog_unhide();
     gDialogProcessReply();
 }
@@ -3937,7 +3924,21 @@ static int about_process_input(int input)
         }
         break;
     case KEY_RETURN:
+#ifdef __3DS__
+        {
+            text_font(101);
+            int count = 0;
+
+            ctr_input_swkbd("Ask about what?", "", about_input_string);
+
+            while (about_input_string[count] != '\0') {
+                count++;
+            }
+            about_input_index = count;
+        }
+#endif
         about_process_string();
+
         break;
     case KEY_ESCAPE:
         if (gdialog_speech_playing == 1) {
@@ -3947,6 +3948,7 @@ static int about_process_input(int input)
         }
         return -1;
     default:
+#ifndef __3DS__
         if (input >= 0 && about_input_index < 126) {
             text_font(101);
             about_input_string[about_input_index] = '_';
@@ -3961,6 +3963,7 @@ static int about_process_input(int input)
 
             about_input_string[about_input_index] = about_input_cursor;
         }
+#endif
         break;
     }
 

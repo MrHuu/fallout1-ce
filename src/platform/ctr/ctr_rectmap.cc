@@ -36,6 +36,12 @@ float offsetY_field = 40.f;
 float offsetX_field_scaled_max;
 float offsetY_field_scaled_max;
 
+bool isAgeWindow = false;
+bool isSexWindow = false;
+
+int offsetY_char = 0;
+
+
 void setSaveSlotOffset(int count)
 {
     if ((!((saveSlotCursor-count) < 0 )) && (!((saveSlotCursor-count) > 4 )))
@@ -78,18 +84,21 @@ void setActiveRectMap(rectMap_e rectmap)
         ctr_rectMap.active = DISPLAY_FULL;
     else
         ctr_rectMap.active = ctr_rectMap.main;
+
+    if (ctr_rectMap.main == DISPLAY_GUI)
+        ctr_input_center_mouse();
 }
 
 void setPreviousRectMap(int index)
 {
-    if (index >= 0 && index < 2) {
+    if (index >= 0 && index <= 2) {
         ctr_rectMap.prev[index] = ctr_rectMap.active;
     }
 }
 
 rectMap_e getPreviousRectMap(int index)
 {
-    if (index >= 0 && index < 2) {
+    if (index >= 0 && index <= 2) {
         return ctr_rectMap.prev[index];
     }
     GNWSystemError("getPreviousRectMap failed\n");
@@ -129,17 +138,17 @@ void setRectMapPos(rectMap_e rectmap, float x, float y, float w, float h, bool i
 
 int setRectMapScaled(bool scaled_rect_top, float rawScaleFactor)
 {
-	if (rawScaleFactor != -1.0) {
-    float newScaleFactor = roundf(rawScaleFactor / SCALE_STEP) * SCALE_STEP;
+    if (rawScaleFactor != -1.0) {
+        float newScaleFactor = roundf(rawScaleFactor / SCALE_STEP) * SCALE_STEP;
 
-    if (newScaleFactor < 0.0f) newScaleFactor = 0.0f;
-    if (newScaleFactor > 1.0f) newScaleFactor = 1.0f;
+        if (newScaleFactor < 0.0f) newScaleFactor = 0.0f;
+        if (newScaleFactor > 1.0f) newScaleFactor = 1.0f;
 
-    if (scaleFactor == newScaleFactor)
-        return -1;
+        if (scaleFactor == newScaleFactor)
+            return -1;
 
-    scaleFactor = newScaleFactor;
-}
+        scaleFactor = newScaleFactor;
+    }
 
     float mappedScaleFactor = MIN_SCALE_FACTOR + (scaleFactor * (1.0f - MIN_SCALE_FACTOR));
 
@@ -244,10 +253,10 @@ void ctr_rectmap_init()
     rectmap_init();
 
     addRectMap(DISPLAY_FULL,              0,   0,   0, 640, 480,   0,   0, 320, 240);
-    addRectMap(DISPLAY_FIELD,             0,   0,   0, 400, 300,   0,   0, 320, 240);
+    addRectMap(DISPLAY_FIELD,             0,   0,   0, 400, 240,   0,   0, 400, 240);
     addRectMap(DISPLAY_MOVIE,             0, 105,  80, 430, 320,  40,   0, 320, 240);
     addRectMap(DISPLAY_MOVIE_SUB,         0, 105, 401, 430,  80,   0,  60, 320, 120);
-    addRectMap(DISPLAY_MAIN,              0, 400,  25, 215, 220,  43,   0, 234, 240);
+    addRectMap(DISPLAY_MAIN,              0, 400,  25, 215, 230,  43,   0, 234, 240);
 
     addRectMap(DISPLAY_GUI,               0,   5, 380, 200, 100,   0, 100, 200, 100); // monitor
     addRectMap(DISPLAY_GUI,               1, 520, 380, 140, 100, 200, 100, 140, 100); // skill pip
@@ -259,19 +268,22 @@ void ctr_rectmap_init()
     addRectMap(DISPLAY_GUI_INDICATOR,     3, 390, 359, 127,  21, 193, 220, 127,  20); // stat indicator
 
     addRectMap(DISPLAY_PAUSE,             0, 240,  72, 160, 215,  71,   0, 178, 240);
-    addRectMap(DISPLAY_PAUSE_CONFIRM,     0, 170, 120, 300, 120,   0,  50, 320, 120);
 
-    addRectMap(DISPLAY_DIALOG_TOP,        0, 130, 230, 390,  60,  10,   0, 380,  60); // dialog
-    addRectMap(DISPLAY_DIALOG_TOP,        1,  80,   0, 480, 290,   0,   0, 397, 240);
+    addRectMap(DISPLAY_DIALOG_TOP,        0,  80,   0, 480, 290,   0,   0, 397, 240);
+    addRectMap(DISPLAY_DIALOG_TOP,        1, 130, 230, 390,  60,  10,   0, 380,  60); // dialog
 
-    addRectMap(DISPLAY_DIALOG,            0, 125, 320, 345, 160,   0,  80, 320, 160); // bottom dialog
-    addRectMap(DISPLAY_DIALOG,            1,   5, 410,  70,  70,  55,   0,  70,  70); // bottom review
-    addRectMap(DISPLAY_DIALOG,            2, 565, 300,  70,  60, 125,   5,  70,  60); // bottom barter
-    addRectMap(DISPLAY_DIALOG,            3, 565, 360,  70,  80, 195,   0,  70,  80); // bottom about
-    addRectMap(DISPLAY_DIALOG_BACK,       0, 560, 440,  80,  36,   0,   0, 320,  80); // back
+    addRectMap(DISPLAY_DIALOG,            0, 145, 320, 345, 160,   0,  80, 320, 160); // bottom dialog
+    addRectMap(DISPLAY_DIALOG,            1,   5, 440,  70,  37,  45,  10,  70,  37); // bottom review
+    addRectMap(DISPLAY_DIALOG,            2, 575, 324,  50,  28, 135,  15,  50,  28); // bottom barter
+    addRectMap(DISPLAY_DIALOG,            3, 575, 399,  50,  28, 210,  15,  50,  28); // bottom about
+    addRectMap(DISPLAY_DIALOG,            4,   5, 417,  70,  18,  48,  52,  70,  18); // bottom review text
+    addRectMap(DISPLAY_DIALOG,            5, 565, 305,  70,  18, 125,  52,  70,  18); // bottom barter text
+    addRectMap(DISPLAY_DIALOG,            6, 565, 360,  70,  35, 200,  44,  70,  35); // bottom about text
 
-    addRectMap(DISPLAY_SKILLDEX,          0, 452,   5, 180, 190,   0,  40, 160, 190);
-    addRectMap(DISPLAY_SKILLDEX,          1, 452, 190, 180, 180, 160,   0, 160, 180);
+    addRectMap(DISPLAY_SKILLDEX,          0, 465,  50, 165, 140,  10,  50, 150, 140);
+    addRectMap(DISPLAY_SKILLDEX,          1, 465, 195, 165, 140, 160,  50, 150, 140);
+    addRectMap(DISPLAY_SKILLDEX,          2, 497,  14, 90,   29, 105, 195, 110,  35); // skilldex
+    addRectMap(DISPLAY_SKILLDEX,          3, 485, 339, 117,  24, 102,  10, 117,  24); // cancel
 
     addRectMap(DISPLAY_INVENTORY,         0,  95,  10, 470, 357,   0,   0, 320, 240);
     addRectMap(DISPLAY_INVENTORY_USE,     0,  80,   0, 290, 375,  52,   0, 215, 240); // single small inventory
@@ -283,21 +295,26 @@ void ctr_rectmap_init()
     addRectMap(DISPLAY_INVENTORY_TRADE,   3,   0, 290,  80, 140,   0,   0,  60,  80); // during barter
     addRectMap(DISPLAY_INVENTORY_TRADE,   4, 560, 290,  80, 140, 260,   0,  60,  80); // during barter
 
-    addRectMap(DISPLAY_INVENTORY_MOVE,    0, 140,  80, 258, 162,   0,  33, 320, 174);
-    addRectMap(DISPLAY_INVENTORY_TIMER,   0, 140,  80, 258, 162,   0,  33, 320, 174);
-
-    addRectMap(DISPLAY_AUTOMAP,           0,  60,   0, 520, 480,   0,   0, 320, 240);
     addRectMap(DISPLAY_WORLDMAP,          0,   0,   0, 640, 480,   0,   0, 320, 240);
     addRectMap(DISPLAY_PIPBOY,            0,   0,   0, 640, 480,   0,   0, 320, 240);
 
-    addRectMap(DISPLAY_CHAR,              0,   0,   0, 640, 480,   0,   0, 320, 240); // still used?
+    addRectMap(DISPLAY_CHAR_SELECT,       0,   0,   0, 640, 480,   0,   0, 320, 240); // char selection at game start
+
+    addRectMap(DISPLAY_CHAR_TOP,          0, 335, 257, 300, 190,   0,   0, 400, 240);
+
+    addRectMap(DISPLAY_CHAR,              0,  10,  30, 320, 210,   0,   0, 320, 210); // left
+    addRectMap(DISPLAY_CHAR,              1, 340,   0, 320, 240,   0,   0, 320, 240); // right
+    addRectMap(DISPLAY_CHAR,              2,  10,   0, 320,  30,   0, 210, 320,  30); // name / age / sex
+    addRectMap(DISPLAY_CHAR,              3, 336, 450, 300,  25,   0,   0, 320,  25); // options / done / cancel
+
+    addRectMap(DISPLAY_CHAR_EDIT_AGE,     0, 155,   0, 140,  70, 145, 170, 140,  70);
+    addRectMap(DISPLAY_CHAR_EDIT_SEX,     0, 195,   0, 140,  70, 180, 170, 140,  70);
+
     addRectMap(DISPLAY_CHAR_PERK_TOP,     0, 304, 110, 290, 180,   0,   0, 400, 240);
     addRectMap(DISPLAY_CHAR_PERK,         0,  44, 105, 247, 199,   0,   0, 320, 240);
 
-    addRectMap(DISPLAY_VATS,              0, 110,  20, 420, 290,   0,   0, 320, 240);
-
-    addRectMap(DISPLAY_LOADSAVE_TOP,      0, 337, 226, 280,  95, 155,   0, 230,  78); // desc
-    addRectMap(DISPLAY_LOADSAVE_TOP,      1, 330,  30, 295, 190,  15,   0, 370, 238); // image
+    addRectMap(DISPLAY_LOADSAVE_TOP,      0, 330,  30, 295, 190,  15,   0, 370, 238); // image
+    addRectMap(DISPLAY_LOADSAVE_TOP,      1, 337, 226, 280,  95, 155,   0, 230,  78); // desc
 
     addRectMap(DISPLAY_LOADSAVE_SLOT,     0,  50,  80, 220, 170,  32,  32, 270, 175); // slots
 
@@ -308,7 +325,11 @@ void ctr_rectmap_init()
     addRectMap(DISPLAY_LOADSAVE_BACK,     0,  20,  20, 290, 200,   0,  40, 320, 200); // frame top
     addRectMap(DISPLAY_LOADSAVE_BACK,     1,  20, 440, 290,  20,   0,   0, 320,  40); // frame bottom
 
-    addRectMap(DISPLAY_ELEVATOR,          0,   0,   0, 640, 480,   0,   0, 320, 240);
+    addRectMap(DISPLAY_OPTIONS,           0,   0,   0, 640, 480,   0,   0, 320, 240); // preferences TODO
+
+    addRectMap(DISPLAY_ENDGAME,           0,   0,   0, 640, 480,   0,   0, 320, 240); // TODO
+    addRectMap(DISPLAY_DYNAMIC,           0,   0,   0,   0,   0,   0,   0,   0,   0); // TODO
+    addRectMap(DISPLAY_DEAD,              0,   0,   0, 640, 480,   0,   0, 320, 240); // TODO
 }
 
 } //namespace fallout

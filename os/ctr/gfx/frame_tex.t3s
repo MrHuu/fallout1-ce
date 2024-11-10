@@ -1,0 +1,3 @@
+--atlas -f rgb888 -z auto
+
+frame_320x240.png

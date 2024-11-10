@@ -28,6 +28,10 @@
 #include "plib/gnw/svga.h"
 #include "plib/gnw/text.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_rectmap.h"
+#endif
+
 namespace fallout {
 
 #define CS_WINDOW_WIDTH 640
@@ -548,7 +552,9 @@ bool select_init()
     win_register_button_sound_func(back_button, gsound_red_butt_press, gsound_red_butt_release);
 
     premade_index = PREMADE_CHARACTER_NARG;
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_CHAR_SELECT);
+#endif
     win_draw(select_window_id);
 
     if (!select_update_display()) {

@@ -17,8 +17,7 @@
 #endif
 
 #ifdef __3DS__
-#include "3ds.h"
-u32 __stacksize__ = 48 * 1024;
+#include "platform/ctr/ctr_sys.h"
 #endif
 
 namespace fallout {
@@ -64,8 +63,19 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef __3DS__
+#ifdef _DEBUG_LINK
+    ctr_sys_3dslink_stdio();
+#endif
     osSetSpeedupEnable(true);
-    chdir("sdmc:/3ds/fallout/");
+
+    linearHeapAvailableAtStart = ctr_sys_check_linear_heap();
+    heapAvailableAtStart = ctr_sys_check_heap();
+
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+
+    const char* basepath = "sdmc:/3ds/fallout/";
+    chdir(basepath);
 #endif
 
     SDL_ShowCursor(SDL_DISABLE);

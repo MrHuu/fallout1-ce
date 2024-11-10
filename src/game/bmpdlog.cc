@@ -461,8 +461,8 @@ int dialog_out(const char* title, const char** body, int bodyLength, int x, int 
 
 #ifdef __3DS__
     setPreviousRectMap(1);
-    setRectMapPos(DISPLAY_PAUSE_CONFIRM, x, y, backgroundWidth, backgroundHeight, false);
-    setActiveRectMap(DISPLAY_PAUSE_CONFIRM);
+    setRectMapPos(DISPLAY_DYNAMIC, x, y, backgroundWidth, backgroundHeight, false);
+    setActiveRectMap(DISPLAY_DYNAMIC); //DISPLAY_PAUSE_CONFIRM
 #endif
 
     win_draw(win);

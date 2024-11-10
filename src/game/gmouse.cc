@@ -2314,9 +2314,11 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
 
     int flags = 0;
 #ifdef __3DS__
+    bool scrollOffset = false;
+
     if (ctr_input.mode == DISPLAY_MODE_ADAPT) {
         if ((ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI)) {
-            if (y > 380) {
+            if (y >= 380) {
                 return -1;
             }
 
@@ -2329,7 +2331,14 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
                 if (offsetX_field > 0) {
                     int move_x = (offsetX_field < 20) ? offsetX_field : 20;
                     offsetX_field -= move_x;
-                    mouse_simulate_input(-move_x, 0, 0);
+
+                    mouse_hide();
+                    gmouse_3d_off();
+                    mouse_set_position(offsetX_field, y);
+                    mouse_show();
+
+                    cursor = MOUSE_CURSOR_SCROLL_W;
+                    scrollOffset = true;
                 } else {
                     flags |= SCROLLABLE_W;
                 }
@@ -2338,7 +2347,14 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
                     int move_x = (offsetX_field_scaled_max - offsetX_field < 20) ?
                             (offsetX_field_scaled_max - offsetX_field) : 20;
                     offsetX_field += move_x;
-                    mouse_simulate_input(move_x, 0, 0);
+
+                    mouse_hide();
+                    gmouse_3d_off();
+                    mouse_set_position(offsetX_field + rectMaps[DISPLAY_FIELD][0]->src_w, y);
+                    mouse_show();
+
+                    cursor = MOUSE_CURSOR_SCROLL_E;
+                    scrollOffset=true;
                 } else {
                     flags |= SCROLLABLE_E;
                 }
@@ -2347,38 +2363,58 @@ static int gmouse_check_scrolling(int x, int y, int cursor)
                 if (offsetY_field > 0) {
                     int move_y = (offsetY_field < 20) ? offsetY_field : 20;
                     offsetY_field -= move_y;
-                    mouse_simulate_input(0, -move_y, 0);
+
+                    mouse_hide();
+                    gmouse_3d_off();
+                    mouse_set_position(x, offsetY_field);
+                    mouse_show();
+
+                    cursor = MOUSE_CURSOR_SCROLL_N;
+                    scrollOffset=true;
                 } else {
                     flags |= SCROLLABLE_N;
                 }
-            } else if (y >= offsetY_field + rectMaps[DISPLAY_FIELD][0]->src_h - scroll_border) {
+            } else if (y >= offsetY_field + (rectMaps[DISPLAY_FIELD][0]->src_h-1) - scroll_border) {
                 if (offsetY_field < offsetY_field_scaled_max) {
                     int move_y = (offsetY_field_scaled_max - offsetY_field < 20) ?
                             (offsetY_field_scaled_max - offsetY_field) : 20;
                     offsetY_field += move_y;
-                    mouse_simulate_input(0, move_y, 0);
+
+                    mouse_hide();
+                    gmouse_3d_off();
+                    mouse_set_position(x, offsetY_field + rectMaps[DISPLAY_FIELD][0]->src_h-1);
+                    mouse_show();
+
+                    cursor = MOUSE_CURSOR_SCROLL_S;
+                    scrollOffset=true;
                 } else {
-                    flags |= SCROLLABLE_S;
+                    if (y < 380)
+                        flags |= SCROLLABLE_S;
                 }
             }
             rectMaps[DISPLAY_FIELD][0]->src_x = offsetX_field;
             rectMaps[DISPLAY_FIELD][0]->src_y = offsetY_field;
-        } else if (ctr_rectMap.active == DISPLAY_FULL) {
-            if (x <= scr_size.ulx) {
-                flags |= SCROLLABLE_W;
-            }
 
-            if (x >= scr_size.lrx) {
-                flags |= SCROLLABLE_E;
+            if (scrollOffset) {
+                gmouse_set_cursor(cursor);
+                return 0;
             }
+        }
+    } else if (ctr_rectMap.active == DISPLAY_FULL) {
+        if (x <= scr_size.ulx) {
+            flags |= SCROLLABLE_W;
+        }
 
-            if (y <= scr_size.uly) {
-                flags |= SCROLLABLE_N;
-            }
+        if (x >= scr_size.lrx) {
+            flags |= SCROLLABLE_E;
+        }
 
-            if (y >= scr_size.lry) {
-                flags |= SCROLLABLE_S;
-            }
+        if (y <= scr_size.uly) {
+            flags |= SCROLLABLE_N;
+        }
+
+        if (y >= scr_size.lry) {
+            flags |= SCROLLABLE_S;
         }
     }
 #else

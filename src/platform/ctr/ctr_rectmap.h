@@ -27,12 +27,10 @@ typedef enum {
     DISPLAY_MOVIE,
     DISPLAY_MOVIE_SUB,
     DISPLAY_SKILLDEX,
-    DISPLAY_AUTOMAP,
     DISPLAY_WORLDMAP,
     DISPLAY_PIPBOY,
     DISPLAY_MAIN,
     DISPLAY_PAUSE,
-    DISPLAY_PAUSE_CONFIRM,
     DISPLAY_DIALOG,
     DISPLAY_DIALOG_TOP,
     DISPLAY_DIALOG_BACK,
@@ -40,26 +38,35 @@ typedef enum {
     DISPLAY_INVENTORY_USE,
     DISPLAY_INVENTORY_LOOT,
     DISPLAY_INVENTORY_TRADE,
-    DISPLAY_INVENTORY_MOVE,
-    DISPLAY_INVENTORY_TIMER,
+    DISPLAY_CHAR_SELECT,
     DISPLAY_CHAR,
+    DISPLAY_CHAR_EDIT_AGE,
+    DISPLAY_CHAR_EDIT_SEX,
+    DISPLAY_CHAR_TOP,
     DISPLAY_CHAR_PERK_TOP,
     DISPLAY_CHAR_PERK,
-    DISPLAY_VATS,
     DISPLAY_LOADSAVE_TOP,
     DISPLAY_LOADSAVE,
     DISPLAY_LOADSAVE_SLOT,
     DISPLAY_LOADSAVE_BACK,
     DISPLAY_ELEVATOR,
+    DISPLAY_OPTIONS,
+    DISPLAY_ENDGAME,
+    DISPLAY_DYNAMIC,
+    DISPLAY_DEAD,
     DISPLAY_LAST
 } rectMap_e;
 
 struct ctr_rectMap_t {
     rectMap_e main;
     rectMap_e active;
-    rectMap_e prev[2];
+    rectMap_e prev[3];
 };
 extern ctr_rectMap_t ctr_rectMap;
+
+extern bool isAgeWindow;
+extern bool isSexWindow;
+extern int offsetY_char;
 
 float getSaveSlotOffset();
 void setSaveSlotOffset(int count);

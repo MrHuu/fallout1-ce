@@ -482,11 +482,11 @@ static int elevator_start(int elevator)
         return -1;
     }
 #ifdef __3DS__
-    setRectMapPos(DISPLAY_ELEVATOR, elevatorWindowX, elevatorWindowY,
+    setRectMapPos(DISPLAY_DYNAMIC, elevatorWindowX, elevatorWindowY,
             GInfo[ELEVATOR_FRM_BACKGROUND].width, GInfo[ELEVATOR_FRM_BACKGROUND].height, false);
 
     setPreviousRectMap(0);
-    setActiveRectMap(DISPLAY_ELEVATOR);
+    setActiveRectMap(DISPLAY_DYNAMIC);
 #endif
     win_buf = win_get_buf(elev_win);
     memcpy(win_buf, (unsigned char*)grphbmp[ELEVATOR_FRM_BACKGROUND], GInfo[ELEVATOR_FRM_BACKGROUND].width * GInfo[ELEVATOR_FRM_BACKGROUND].height);

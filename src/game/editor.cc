@@ -41,6 +41,7 @@
 #include "plib/gnw/text.h"
 
 #ifdef __3DS__
+#include "platform/ctr/ctr_gfx.h"
 #include "platform/ctr/ctr_rectmap.h"
 #endif
 
@@ -656,14 +657,10 @@ int editor_design(bool isCreationMode)
             DrawInfoWin();
         }
     }
-
 #ifdef __3DS__
-    if (!isCreationMode) {
-        setPreviousRectMap(0);
-        setActiveRectMap(DISPLAY_CHAR);
-    }
+    setPreviousRectMap(0);
+    setActiveRectMap(DISPLAY_CHAR);
 #endif
-
     int rc = -1;
     while (rc == -1) {
         sharedFpsLimiter.mark();
@@ -783,9 +780,8 @@ int editor_design(bool isCreationMode)
         }
     }
 #ifdef __3DS__
-    if (!isCreationMode) {
-        setActiveRectMap(getPreviousRectMap(0));
-    }
+    offsetY_char = 0;
+    setActiveRectMap(getPreviousRectMap(0));
 #endif
     CharEditEnd();
 
@@ -1487,7 +1483,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
     win_draw(win);
 #ifdef __3DS__
-    ctr_input_swkbd("", copy, text);
+    ctr_input_swkbd("Enter your name", text, text);
     buf_fill(windowBuffer + windowWidth * y + x, nameWidth, text_height(), windowWidth, backgroundColor);
     text_to_buf(windowBuffer + windowWidth * y + x, copy, windowWidth, windowWidth, textColor);
     renderPresent();
@@ -3069,7 +3065,9 @@ static int AgeWindow()
     if (prevBtn != -1) {
         win_register_button_sound_func(prevBtn, gsound_med_butt_press, NULL);
     }
-
+#ifdef __3DS__
+    isAgeWindow = true;
+#endif
     while (true) {
         sharedFpsLimiter.mark();
 
@@ -3087,6 +3085,9 @@ static int AgeWindow()
             }
 
             win_delete(win);
+#ifdef __3DS__
+            isAgeWindow = false;
+#endif
             return 0;
         } else if (keyCode == KEY_ESCAPE || game_user_wants_to_quit != 0) {
             break;
@@ -3195,7 +3196,9 @@ static int AgeWindow()
             sharedFpsLimiter.throttle();
         }
     }
-
+#ifdef __3DS__
+    isAgeWindow = false;
+#endif
     stat_set_base(obj_dude, STAT_AGE, savedAge);
     PrintAgeBig();
     PrintBasicStat(RENDER_ALL_STATS, 0, 0);
@@ -3217,6 +3220,9 @@ static void SexWindow()
     int genderWindowX = (screenGetWidth() - EDITOR_WINDOW_WIDTH) / 2 + 9
         + GInfo[EDITOR_GRAPHIC_NAME_ON].width
         + GInfo[EDITOR_GRAPHIC_AGE_ON].width;
+#ifdef __3DS__
+    genderWindowX -= 40;
+#endif
     int genderWindowY = (screenGetHeight() - EDITOR_WINDOW_HEIGHT) / 2;
     int win = win_add(genderWindowX, genderWindowY, windowWidth, windowHeight, 256, WINDOW_MODAL | WINDOW_DONT_MOVE_TOP);
 
@@ -3296,7 +3302,9 @@ static void SexWindow()
 
     int savedGender = stat_level(obj_dude, STAT_GENDER);
     win_set_button_rest_state(btns[savedGender], 1, 0);
-
+#ifdef __3DS__
+    isSexWindow = true;
+#endif
     while (true) {
         sharedFpsLimiter.mark();
 
@@ -3335,7 +3343,9 @@ static void SexWindow()
         renderPresent();
         sharedFpsLimiter.throttle();
     }
-
+#ifdef __3DS__
+    isSexWindow = false;
+#endif
     PrintGender();
     win_delete(win);
 }

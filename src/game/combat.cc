@@ -4365,7 +4365,10 @@ static int get_called_shot_location(Object* critter, int* hit_location, int hit_
 
 #ifdef __3DS__
     setPreviousRectMap(0);
-    setActiveRectMap(DISPLAY_VATS);
+    setRectMapPos(DISPLAY_DYNAMIC, calledShotWindowX, calledShotWindowY,
+            CALLED_SHOT_WINDOW_WIDTH, CALLED_SHOT_WINDOW_HEIGHT, false);
+
+    setActiveRectMap(DISPLAY_DYNAMIC);
 #endif
 
     int eventCode;

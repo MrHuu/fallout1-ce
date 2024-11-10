@@ -14,6 +14,10 @@
 #include "plib/gnw/grbuf.h"
 #include "plib/gnw/memory.h"
 
+#ifdef __3DS__
+#include "platform/ctr/ctr_sys.h"
+#endif
+
 namespace fallout {
 
 typedef struct ArtListDescription {
@@ -89,7 +93,12 @@ int art_init()
     if (!config_get_value(&game_config, GAME_CONFIG_SYSTEM_KEY, GAME_CONFIG_ART_CACHE_SIZE_KEY, &cacheSize)) {
         cacheSize = 8;
     }
-
+#ifdef __3DS__
+#ifdef _DEBUG
+    debug_printf("Setting cacheSize: %9.2f \n",((heapAvailableAtStart / (1024.0f * 1024.0f)) - 16));
+#endif
+    cacheSize = ((heapAvailableAtStart / (1024.0f * 1024.0f)) - 16);
+#endif
     if (!cache_init(&art_cache, art_data_size, art_data_load, art_data_free, cacheSize << 20)) {
         debug_printf("cache_init failed in art_init\n");
         return -1;

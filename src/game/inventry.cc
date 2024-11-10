@@ -1237,9 +1237,7 @@ bool setup_inventory(int inventoryWindowType)
 
     gmouse_disable(0);
 #ifdef __3DS__
-    if ((ctr_rectMap.main == DISPLAY_FIELD) || (ctr_rectMap.main == DISPLAY_GUI)) {
-        setPreviousRectMap(0);
-    }
+    setPreviousRectMap(1);
 
     switch (inventoryWindowType) {
         case INVENTORY_WINDOW_TYPE_NORMAL:
@@ -1904,7 +1902,7 @@ void inven_exit()
 
     inven_is_initialized = 0;
 #ifdef __3DS__
-    setActiveRectMap(getPreviousRectMap(0));
+    setActiveRectMap(getPreviousRectMap(1));
 #endif
 }
 
@@ -5133,10 +5131,6 @@ void draw_amount(int value, int inventoryWindowType)
 // 0x469458
 static int do_move_timer(int inventoryWindowType, Object* item, int max)
 {
-#ifdef __3DS__
-    setPreviousRectMap(1);
-    setActiveRectMap(DISPLAY_INVENTORY_MOVE);
-#endif
     setup_move_timer_win(inventoryWindowType, item);
 
     int value;
@@ -5162,7 +5156,7 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max)
         if (keyCode == KEY_ESCAPE) {
             exit_move_timer_win(inventoryWindowType);
 #ifdef __3DS__
-            setActiveRectMap(getPreviousRectMap(1));
+            setActiveRectMap(getPreviousRectMap(2));
 #endif
             return -1;
         }
@@ -5235,7 +5229,7 @@ static int do_move_timer(int inventoryWindowType, Object* item, int max)
         sharedFpsLimiter.throttle();
     }
 #ifdef __3DS__
-    setActiveRectMap(getPreviousRectMap(1));
+    setActiveRectMap(getPreviousRectMap(2));
 #endif
     exit_move_timer_win(inventoryWindowType);
 
@@ -5265,6 +5259,14 @@ static int setup_move_timer_win(int inventoryWindowType, Object* item)
         : windowDescription->y;
     mt_wid = win_add(quantityWindowX, quantityWindowY, windowDescription->width, windowDescription->height, 257, WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     unsigned char* windowBuffer = win_get_buf(mt_wid);
+
+#ifdef __3DS__
+    setRectMapPos(DISPLAY_DYNAMIC, quantityWindowX, quantityWindowY,
+            windowDescription->width, windowDescription->height, false);
+
+    setPreviousRectMap(2);
+    setActiveRectMap(DISPLAY_DYNAMIC);
+#endif
 
     CacheEntry* backgroundHandle;
     int backgroundFid = art_id(OBJ_TYPE_INTERFACE, windowDescription->field_0, 0, 0, 0);

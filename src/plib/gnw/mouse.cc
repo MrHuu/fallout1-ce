@@ -728,7 +728,7 @@ static void ctr_mouse_clip()
         int src_w = rectMaps[DISPLAY_FIELD][0]->src_w;
         int src_h = rectMaps[DISPLAY_FIELD][0]->src_h;
 
-        if ((ctr_rectMap.active == DISPLAY_GUI && mouse_hoty + mouse_y <= 380) ||
+        if ((ctr_rectMap.active == DISPLAY_GUI && mouse_hoty + mouse_y < 380) ||
                 ctr_rectMap.active == DISPLAY_FIELD) {
             if (mouse_hotx + mouse_x < src_x) {
                 mouse_x = src_x - mouse_hotx;
@@ -738,8 +738,8 @@ static void ctr_mouse_clip()
 
             if (mouse_hoty + mouse_y < src_y) {
                 mouse_y = src_y - mouse_hoty;
-            } else if (mouse_hoty + mouse_y > src_y + src_h) {
-                mouse_y = src_y + src_h - mouse_hoty;
+            } else if (mouse_hoty + mouse_y > src_y + (src_h-1)) {
+                mouse_y = src_y + (src_h-1) - mouse_hoty;
             }
             return;
         }

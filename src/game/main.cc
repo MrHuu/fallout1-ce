@@ -131,7 +131,7 @@ int gnw_main(int argc, char** argv)
                 main_menu_hide(true);
                 main_menu_destroy();
 #ifdef __3DS__
-                setActiveRectMap(DISPLAY_FULL);
+                setActiveRectMap(DISPLAY_CHAR_SELECT);
 #endif
                 if (select_character() == 2) {
                     gmovie_play(MOVIE_OVRINTRO, GAME_MOVIE_STOP_MUSIC);
@@ -175,6 +175,9 @@ int gnw_main(int argc, char** argv)
                     } else if (loadGameRc != 0) {
                         win_delete(win);
                         win = -1;
+#ifdef __3DS__
+                        setActiveRectMap(DISPLAY_GUI);
+#endif
                         main_game_loop();
                     }
                     palette_fade_to(white_palette);
@@ -279,7 +282,9 @@ static int main_load_new(char* mapFileName)
 
     int win = win_add(0, 0, screenGetWidth(), screenGetHeight(), colorTable[0], WINDOW_MODAL | WINDOW_MOVE_ON_TOP);
     win_draw(win);
-
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_GUI);
+#endif
     loadColorTable("color.pal");
     palette_fade_to(cmap);
     map_init();
@@ -329,10 +334,6 @@ static void main_game_loop()
     }
 
     main_game_paused = 0;
-
-#ifdef __3DS__
-    setActiveRectMap(DISPLAY_GUI);
-#endif
 
     scr_enable();
 
@@ -500,6 +501,10 @@ static void main_selfrun_play()
 // 0x472D90
 static void main_death_scene()
 {
+#ifdef __3DS__
+    setActiveRectMap(DISPLAY_DEAD);
+#endif
+
     // 0x4725B0
     static const char* deathFileNameList[] = {
         "narrator\\nar_3",

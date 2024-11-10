@@ -16,6 +16,13 @@ void mem_free(void* ptr);
 void mem_check();
 void mem_register_func(MallocFunc* mallocFunc, ReallocFunc* reallocFunc, FreeFunc* freeFunc);
 
+#if defined __3DS__ && _DEBUG_OVERLAY
+int get_num_blocks();
+int get_max_blocks();
+size_t get_mem_allocated();
+size_t get_max_allocated();
+#endif
+
 } // namespace fallout
 
 #endif /* FALLOUT_PLIB_GNW_MEMORY_H_ */

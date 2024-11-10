@@ -38,9 +38,9 @@ SOURCES     := src src/game src/int src/int/support src/plib/assoc src/plib/colo
 DATA        := data
 INCLUDES    := src src/game src/int src/int/support src/plib/assoc src/plib/color src/plib/db src/plib/gnw \
                src/platform/ctr third_party/fpattern
-GRAPHICS    := gfx
-GFXBUILD    := $(BUILD)
-#ROMFS       := os/ctr/romfs
+GRAPHICS    := os/ctr/gfx
+ROMFS       := romfs
+GFXBUILD    := $(ROMFS)/gfx
 
 APP_TITLE           := Fallout
 APP_DESCRIPTION     := Fallout-ce port for 3DS
@@ -50,7 +50,7 @@ APP_PRODUCT_CODE    := CTR-P-FALLOUT
 APP_UNIQUE_ID       := 0xDA3A4
 APP_VERSION_MAJOR   := 0
 APP_VERSION_MINOR   := 0
-APP_VERSION_MICRO   := 4
+APP_VERSION_MICRO   := 5
 
 APP_RSF             := $(TOPDIR)/os/ctr/template.rsf
 APP_ICON            := $(TOPDIR)/os/ctr/icon.png
@@ -68,18 +68,21 @@ REMOTE_IP   := 192.168.1.96
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS	:=	-g -Wall -O2 -mword-relocations \
+CFLAGS	:=	-g -Wall -mword-relocations \
 			-fomit-frame-pointer -ffunction-sections \
 			$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -D__3DS__ -DSDL_MAIN_HANDLED
+
+CFLAGS	+=	-Ofast -funroll-loops -fno-math-errno -ffast-math -flto=auto
+#CFLAGS	+=	-D_DEBUG -D_DEBUG_OVERLAY -D_DEBUG_LINK
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:=  -lSDL2 -lz -lcitro3d -lctru -lm 
+LIBS	:=  -lSDL2 -lcitro2d -lcitro3d -lctru -lm -lz
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -109,6 +112,7 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 PICAFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
 SHLISTFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
+GFXFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.t3s)))
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -184,7 +188,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(TARGET).cia $(TARGET).elf $(GFXBUILD)
+	@rm -fr $(BUILD) $(TARGET).3dsx $(TARGET).cia $(TARGET).elf $(GFXBUILD) $(ROMFS)
 
 3dslink: all
 	@3dslink -a $(REMOTE_IP) $(OUTPUT).3dsx
@@ -210,7 +214,7 @@ else
 
 COMMON_MAKEROM_PARAMS		:= -rsf $(APP_RSF) -target t -exefslogo -elf $(OUTPUT).elf -icon $(TARGET).smdh \
 			-banner $(TARGET).bnr -DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(APP_PRODUCT_CODE)" \
-			-DAPP_UNIQUE_ID="$(APP_UNIQUE_ID)" -DAPP_SYSTEM_MODE="64MB" -DAPP_SYSTEM_MODE_EXT="Legacy" \
+			-DAPP_UNIQUE_ID="$(APP_UNIQUE_ID)" -DAPP_SYSTEM_MODE="80MB" -DAPP_SYSTEM_MODE_EXT="124MB" \
 			-major "$(APP_VERSION_MAJOR)" -minor "$(APP_VERSION_MINOR)" -micro "$(APP_VERSION_MICRO)"
 
 ifneq ($(ROMFS),)
@@ -264,18 +268,12 @@ $(TARGET).smdh : $(APP_ICON)
 	@$(bin2o)
 
 #---------------------------------------------------------------------------------
-.PRECIOUS	:	%.t3x
+.PRECIOUS	:	%.t3x %.shbin
 #---------------------------------------------------------------------------------
 %.t3x.o	%_t3x.h :	%.t3x
 #---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@$(bin2o)
-
-#---------------------------------------------------------------------------------
-%.t3x	%.h	:	%.t3s
-#---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@tex3ds -i $< -H $*.h -d $*.d -o $*.t3x
+	$(SILENTMSG) $(notdir $<)
+	$(bin2o)
 
 #---------------------------------------------------------------------------------
 %.shbin.o %_shbin.h : %.shbin

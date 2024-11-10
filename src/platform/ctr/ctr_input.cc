@@ -4,12 +4,20 @@
 #include "ctr_input.h"
 #include "ctr_gfx.h"
 #include "ctr_rectmap.h"
+#include "ctr_sys.h"
+
+#include "platform_compat.h"
 
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/svga.h"
+#include "plib/gnw/input.h"
 #include "plib/gnw/mouse.h"
 #include "plib/gnw/touch.h"
+#include "plib/gnw/debug.h"
+
+#include "game/gdialog.h"
 #include "game/map.h"
+#include "game/scripts.h"
 
 namespace fallout {
 
@@ -28,38 +36,44 @@ namespace fallout {
 #define KEY_RELEASED(x) (!(ctr_input.frame.kHeld & x) && (oldpad & x))
 
 #define MAX_OFFSET 240
-#define MAX_OFFSET_QTM 120
 
-struct CursorPosition {
-    int x;
-    int y;
-};
+#define ABOUT_INPUT_MAX_SIZE 128
+#define MAX_DICT_WORDS 100
 
-CursorPosition absoluteCursorPosition;
 ctr_input_t ctr_input;
 
 static u8 key_combi_flags = FLAG_NONE;
 static u32 oldpad = 0;
 static bool scaled_rect_top = false;
-static bool relativeMode = true;
 static float previousSliderState = -1.0f;
 static float manualScaleFactor = 0.0f;
-static int speedDivider = 5;
-static int deadzone = 15;
 
 int offsetX = 0;
 int offsetY = 0;
 
-void input_touch_to_texture(rectMap_e activeDisplayRectMap, int touch_x, int touch_y, int *originalX, int *originalY)
-{
-    for (int i = 0; i < numRectsInMap[activeDisplayRectMap]; ++i) {
+static SwkbdDictWord words[MAX_DICT_WORDS];
+static int num_words;
+static int dictId = -1;
 
-    rectMap_t *dstRect = rectMaps[activeDisplayRectMap][i];
+
+void ctr_input_center_mouse(void)
+{
+    mouse_hide();
+    mouse_set_position(offsetX_field + (rectMaps[DISPLAY_FIELD][0]->src_w / 2),
+            offsetY_field + (rectMaps[DISPLAY_FIELD][0]->src_h / 2));
+    mouse_show();
+}
+
+void input_touch_to_texture(rectMap_e rectmap, int touch_x, int touch_y, int *originalX, int *originalY)
+{
+    for (int i = 0; i < numRectsInMap[rectmap]; ++i) {
+
+    rectMap_t *dstRect = rectMaps[rectmap][i];
 
         if (touch_x >= dstRect->dst_x && touch_x < (dstRect->dst_x + dstRect->dst_w) &&
             touch_y >= (240 - (dstRect->dst_y + dstRect->dst_h)) && touch_y < (240 - dstRect->dst_y)) {
 
-            rectMap_t *srcRect = rectMaps[activeDisplayRectMap][i];
+            rectMap_t *srcRect = rectMaps[rectmap][i];
 
             float x_scale = dstRect->dst_w / srcRect->src_w;
             float y_scale = dstRect->dst_h / srcRect->src_h;
@@ -80,12 +94,37 @@ void ctr_input_get_touch(int *newX, int *newY)
         case DISPLAY_FULL:
             *newX = (ctr_input.frame.touchX * screenGetWidth()) / 320;
             *newY = (ctr_input.frame.touchY * screenGetHeight()) / 240;
+            break;
+        case DISPLAY_CHAR:
+            input_touch_to_texture(DISPLAY_CHAR,
+                    ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
 
-            if (*newX < 15) *newX = 0;
-            if (*newY < 15) *newY = 0;
+            if ((ctr_input.frame.touchY > 30) && (ctr_input.frame.touchY < 215)) {
+                if (offsetY_char <= 240) {
+                    *newY += offsetY_char;
+                    *newX -= 330;
+                } else if ((offsetY_char > 240) && (offsetY_char <= 480)) {
+                    int visableTop = 480 - offsetY_char;
 
-            if (*newX > 625) *newX = 640;
-            if (*newY > 465) *newY = 480;
+                    if (ctr_input.frame.touchY <= visableTop) {
+                        *newY += offsetY_char;
+                        *newX -= 330;
+                    } else {
+                        *newY += (-visableTop);
+                        *newX -= 10;
+                    }
+                } else if (offsetY_char > 480) {
+                    *newY += offsetY_char-480;
+                    *newX -= 10;
+                }
+            }
+            if (isAgeWindow)
+                input_touch_to_texture(DISPLAY_CHAR_EDIT_AGE,
+                        ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
+
+            if (isSexWindow)
+                input_touch_to_texture(DISPLAY_CHAR_EDIT_SEX,
+                        ctr_input.frame.touchX, ctr_input.frame.touchY, newX, newY);
             break;
         case DISPLAY_LOADSAVE:
             input_touch_to_texture(DISPLAY_LOADSAVE_SLOT,
@@ -98,76 +137,7 @@ void ctr_input_get_touch(int *newX, int *newY)
     }
 }
 
-void updateCursorPosition(s16 deltaX, s16 deltaY, int speedDivider, bool relativeMode, int deadzone)
-{
-    const int screenWidth = 240;
-    const int screenHeight = 240;
-
-    int cursorX = absoluteCursorPosition.x;
-    int cursorY = absoluteCursorPosition.y;
-
-    int moveX = (int)deltaX / speedDivider;
-    int moveY = -(int)deltaY / speedDivider;
-
-    if (abs(moveX) < deadzone) {
-        moveX = 0;
-    }
-    if (abs(moveY) < deadzone) {
-        moveY = 0;
-    }
-
-    if (relativeMode) {
-        cursorX += moveX;
-        cursorY += moveY;
-    } else {
-        cursorX = moveX;
-        cursorY = moveY;
-    }
-
-    if (cursorX < 0) {
-        cursorX = 0;
-    } else if (cursorX >= screenWidth) {
-        cursorX = screenWidth - 1;
-    }
-
-    if (cursorY < 0) {
-        cursorY = 0;
-    } else if (cursorY >= screenHeight) {
-        cursorY = screenHeight - 1;
-    }
-
-    absoluteCursorPosition.x = cursorX;
-    absoluteCursorPosition.y = cursorY;
-}
-
-void resetCursorPosition()
-{
-    absoluteCursorPosition.x = 120;
-    absoluteCursorPosition.y = 120;
-}
-
-void ctr_init_qtm()
-{
-    u8 device_model = 0xFF;
-    CFGU_GetSystemModel(&device_model);
-    if ((device_model == CFG_MODEL_N3DS) || (device_model == CFG_MODEL_N3DSXL)) {
-        qtmInit();
-        ctr_input.qtm_state.qtm_usable = qtmCheckInitialized();
-    } else
-        ctr_input.qtm_state.qtm_usable = false;
-
-    if (!ctr_input.qtm_state.qtm_usable) ctr_input.input = INPUT_TOUCH;
-
-    resetCursorPosition();
-}
-
-void ctr_exit_qtm()
-{
-    ctr_input.qtm_state.qtm_usable = false;
-    qtmExit();
-}
-
-void ctr_input_process()
+void ctr_input_process(void)
 {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -229,7 +199,7 @@ void ctr_input_process()
     }
 }
 
-void input_frame_touch()
+void input_frame_touch(void)
 {
     return;
 }
@@ -240,7 +210,9 @@ void input_frame_axis(int *delta_x, int *delta_y)
     int moveX;
     int moveY;
 
-    if ((ctr_rectMap.active == DISPLAY_FULL) || (ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI)) {
+    if ((ctr_rectMap.active == DISPLAY_FULL) || (ctr_rectMap.active == DISPLAY_FIELD) ||
+            (ctr_rectMap.active == DISPLAY_GUI) || (ctr_rectMap.active == DISPLAY_WORLDMAP) ||
+            (ctr_rectMap.active == DISPLAY_CHAR_SELECT) || (ctr_rectMap.active == DISPLAY_CHAR)) {
 
         circlePosition circle;
         hidCircleRead(&circle);
@@ -252,10 +224,10 @@ void input_frame_axis(int *delta_x, int *delta_y)
         moveX = (int)circle.dx / 15 + (int)cstick.dx / 15;
         moveY = -((int)circle.dy / 15 + (int)cstick.dy / 15);
 
-        if (abs(moveX) < 1) {
+        if (abs(moveX) < 2) {
             moveX = 0;
         }
-        if (abs(moveY) < 1) {
+        if (abs(moveY) < 2) {
             moveY = 0;
         }
 
@@ -263,17 +235,25 @@ void input_frame_axis(int *delta_x, int *delta_y)
             if ((moveX != 0) || (moveY != 0)) {
                 mouse_get_position(&x, &y);
                 if (y > 380) {
+                    ctr_input_center_mouse();
+                } else if (y + moveY >= 380) {
                     mouse_hide();
-                    mouse_set_position(320, 190);
-                    mouse_show();
-                } else if (y + moveY > 380) {
-                    mouse_hide();
-                    mouse_set_position(x, 380);
+                    mouse_set_position(x, 379);
                     mouse_show();
                 } else {
                     *delta_x += moveX;
                     *delta_y += moveY;
                 }
+            }
+        } else if (ctr_rectMap.active == DISPLAY_CHAR) {
+            if (!isAgeWindow && !isSexWindow) {
+                offsetY_char += moveY;
+
+                if (offsetY_char < 0)
+                    offsetY_char=0;
+
+                if (offsetY_char > 525)
+                    offsetY_char=525;
             }
         } else {
             *delta_x += moveX;
@@ -284,6 +264,30 @@ void input_frame_axis(int *delta_x, int *delta_y)
 
 void input_frame_buttons(int *delta_x, int *delta_y, int *buttons)
 {
+#ifdef _DEBUG_OVERLAY
+    if (KEY_HELD(KEY_START) && KEY_PRESS(KEY_DUP)) {
+        ctr_gfx.overlayEnable = !ctr_gfx.overlayEnable;
+        key_combi_flags |= FLAG_START_DUP;
+    }
+
+    if (KEY_HELD(KEY_START) && KEY_PRESS(KEY_DDOWN)) {
+        ctr_gfx.overlayEnableExtra = !ctr_gfx.overlayEnableExtra;
+        key_combi_flags |= FLAG_START_DDOWN;
+    }
+
+    if (KEY_HELD(KEY_START) && KEY_PRESS(KEY_DRIGHT)) {
+        linearHeapAvailable = ctr_sys_check_linear_heap();
+        heapAvailable = ctr_sys_check_heap();
+        key_combi_flags |= FLAG_START_DRIGHT;
+    }
+
+    if (KEY_HELD(KEY_START) && KEY_PRESS(KEY_DLEFT)) {
+        ctr_gfx.isWide = !ctr_gfx.isWide;
+        gfxSetWide(ctr_gfx.isWide);
+        ctr_gfx_reinit();
+        key_combi_flags |= FLAG_SELECT_DLEFT;
+    }
+#endif
     if (KEY_HELD(KEY_SELECT) && KEY_PRESS(KEY_DDOWN)) {
         manualScaleFactor -= 0.2f; // zoom out
         if (manualScaleFactor < 0.0f) {
@@ -298,6 +302,18 @@ void input_frame_buttons(int *delta_x, int *delta_y, int *buttons)
             manualScaleFactor = 1.0f;
         }
         key_combi_flags |= FLAG_SELECT_DUP;
+    }
+
+    if (KEY_RELEASED(KEY_START)) {
+        if (key_combi_flags) {
+            key_combi_flags = FLAG_NONE;
+        } else {
+            if ((ctr_rectMap.active != DISPLAY_MOVIE) &&
+                    (ctr_rectMap.active != DISPLAY_MAIN) &&
+                    (ctr_rectMap.active != DISPLAY_FULL)) {
+                GNW_add_input_buffer(KEY_ESCAPE);
+            }
+        }
     }
 
     if (KEY_RELEASED(KEY_SELECT)) {
@@ -315,8 +331,10 @@ void input_frame_buttons(int *delta_x, int *delta_y, int *buttons)
         }
 
         if ((ctr_rectMap.active == DISPLAY_FULL) ||
-                (ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI)) {
-            if (KEY_PRESS(KEY_R)) {
+                (ctr_rectMap.active == DISPLAY_FIELD) || (ctr_rectMap.active == DISPLAY_GUI) ||
+                (ctr_rectMap.active == DISPLAY_WORLDMAP) || (ctr_rectMap.active == DISPLAY_CHAR_SELECT) ||
+                (ctr_rectMap.active == DISPLAY_CHAR)) {
+            if (KEY_HELD(KEY_R)) {
                 *buttons |= MOUSE_STATE_LEFT_BUTTON_DOWN;
             }
         }
@@ -415,88 +433,30 @@ void input_frame_buttons(int *delta_x, int *delta_y, int *buttons)
             rectMaps[DISPLAY_FIELD][0]->src_x = offsetX_field;
             rectMaps[DISPLAY_FIELD][0]->src_y = offsetY_field;
         } else {
-            if (KEY_HELD(KEY_DUP))
+            if (KEY_HELD(KEY_DUP)) {
                 map_scroll(0, -1);
-            if (KEY_HELD(KEY_DDOWN))
+                *buttons |= KEY_ARROW_UP;
+            }
+            if (KEY_HELD(KEY_DDOWN)) {
                 map_scroll(0, 1);
-            if (KEY_HELD(KEY_DLEFT))
+                *buttons |= KEY_ARROW_DOWN;
+            }
+            if (KEY_HELD(KEY_DLEFT)) {
                 map_scroll(-1, 0);
-            if (KEY_HELD(KEY_DRIGHT))
-            map_scroll(1, 0);
+            }
+            if (KEY_HELD(KEY_DRIGHT)) {
+                map_scroll(1, 0);
+            }
         }
     }
     oldpad = ctr_input.frame.kHeld;
 }
 
-int ctr_input_frame()
+int ctr_input_frame(void)
 {
     int delta_x = 0;
     int delta_y = 0;
     int buttons = 0;
-
-    switch (ctr_input.input) {
-        case INPUT_TOUCH:
-            if (ctr_input.qtm_state.qtm_usable)
-                ctr_exit_qtm();
-            break;
-
-        case INPUT_CPAD:
-            if (ctr_input.qtm_state.qtm_usable)
-                ctr_exit_qtm();
-            circlePosition circle;
-            hidCircleRead(&circle);
-            updateCursorPosition(circle.dx, circle.dy, speedDivider, relativeMode, deadzone);
-            offsetX = absoluteCursorPosition.x;
-            offsetY = absoluteCursorPosition.y;
-            break;
-
-        case INPUT_QTM:
-        {
-            if (!ctr_input.qtm_state.qtm_usable) {
-                ctr_init_qtm();
-            } else if (ctr_input.qtm_state.qtm_usable) {
-                float range_x = 320.0f;
-                float range_y = 240.0f;
-                if (ctr_input.qtm_state.rel_x == 0) {
-                    ctr_input.qtm_state.rel_x = 25000;
-                    ctr_input.qtm_state.rel_y = 25000;
-                    ctr_input.qtm_state.multiplier = 1;
-                }
-                Result ret = QTM_GetHeadTrackingInfo(0, &ctr_input.qtm_state.qtminfo);
-                if (ret == 0) {
-                    if (qtmCheckHeadFullyDetected(&ctr_input.qtm_state.qtminfo)) {
-                        ret = qtmConvertCoordToScreen(&ctr_input.qtm_state.qtminfo.coords0[0],
-                                &range_x, &range_y, &ctr_input.qtm_state.qtm_x, &ctr_input.qtm_state.qtm_y);
-                    }
-                }
-            }
-            if (KEY_PRESS(KEY_ZR)) {
-                ctr_input.qtm_state.multiplier += 1;
-                if (ctr_input.qtm_state.multiplier > 10)
-                    ctr_input.qtm_state.multiplier = 1;
-            }
-            int rel_qtm_offsetX = (int)(ctr_input.qtm_state.qtm_x - 120);
-            int rel_qtm_offsetY = (int)(ctr_input.qtm_state.qtm_y - 120);
-            int textureX = rel_qtm_offsetX * ctr_input.qtm_state.multiplier;
-            int textureY = rel_qtm_offsetY * ctr_input.qtm_state.multiplier;
-            if (textureX > MAX_OFFSET_QTM) {
-                textureX = MAX_OFFSET_QTM;
-            } else if (textureX < -MAX_OFFSET_QTM) {
-                textureX = -MAX_OFFSET_QTM;
-            }
-            if (textureY > MAX_OFFSET_QTM) {
-                textureY = MAX_OFFSET_QTM;
-            } else if (textureY < -MAX_OFFSET_QTM) {
-                textureY = -MAX_OFFSET_QTM;
-            }
-            offsetX = 120 + textureX;
-            offsetY = 120 + textureY;
-            break;
-        }
-
-        default:
-            break;
-    }
 
     input_frame_touch();
     input_frame_axis(&delta_x, &delta_y);
@@ -510,12 +470,78 @@ int ctr_input_frame()
     return 0;
 }
 
+bool ctr_input_key_pressed(void)
+{
+    bool pressed = (ctr_input.frame.kHeld && (!(oldpad)));
+    oldpad = ctr_input.frame.kHeld;
+
+    return pressed;
+}
+
+void to_lowercase(char* str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower((unsigned char)str[i]);
+    }
+}
+
+void swkbd_about_lookup_word(void)
+{
+    Script* scr;
+
+    int message_list_id;
+    int message_id;
+    char* str;
+
+    num_words = 0;
+
+    while (num_words < MAX_DICT_WORDS) {
+        if (scr_ptr(dialog_target->sid, &scr) != -1) {
+            message_list_id = scr->scr_script_idx + 1;
+            for (message_id = 1000; message_id < 1100; message_id++) {
+                str = scr_get_msg_str(message_list_id, message_id);
+
+                if (str != NULL && compat_stricmp(str, "Error") != 0) {
+                    to_lowercase(str);
+#ifdef _DEBUG
+                    debug_printf("about_lookup_word: %s\n", str);
+#endif
+                    swkbdSetDictWord(&words[num_words], str, str);
+                    num_words++;
+                }
+            }
+        }
+        message_list_id = 1;
+        for (message_id = 600 * map_data.field_34 + 1000; message_id < 600 * map_data.field_34 + 1100; message_id++) {
+            str = scr_get_msg_str(message_list_id, message_id);
+
+            if (str != NULL && compat_stricmp(str, "Error") != 0) {
+                to_lowercase(str);
+#ifdef _DEBUG
+                debug_printf("about_lookup_word: %s\n", str);
+#endif
+                swkbdSetDictWord(&words[num_words], str, str);
+                num_words++;
+            }
+        }
+        break;
+    }
+}
+
+void ctr_input_swkdb_init(void)
+{
+    if (dictId == dialog_target->sid)
+        return;
+
+    dictId = dialog_target->sid;
+    swkbd_about_lookup_word();
+}
+
 int ctr_input_swkbd(const char *hintText, const char *inText, char *outText)
 {
     SwkbdState swkbd;
     static SwkbdStatusData swkbdStatus;
     static SwkbdLearningData swkbdLearning;
-    char mybuf[128];
+    char mybuf[ABOUT_INPUT_MAX_SIZE];
 
     swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 2, -1);
     swkbdSetValidation(&swkbd, SWKBD_NOTEMPTY_NOTBLANK, 0, 0);
@@ -525,6 +551,7 @@ int ctr_input_swkbd(const char *hintText, const char *inText, char *outText)
     swkbdSetButton(&swkbd, SWKBD_BUTTON_RIGHT, "Close", false);
     swkbdSetFeatures(&swkbd,
             SWKBD_PREDICTIVE_INPUT | SWKBD_ALLOW_HOME | SWKBD_ALLOW_RESET | SWKBD_ALLOW_POWER);
+    swkbdSetDictionary(&swkbd, words, sizeof(words)/sizeof(SwkbdDictWord));
 
     static bool reload = false;
     swkbdSetStatusData(&swkbd, &swkbdStatus, reload, true);
@@ -534,33 +561,38 @@ int ctr_input_swkbd(const char *hintText, const char *inText, char *outText)
     SwkbdButton button = swkbdInputText(&swkbd, mybuf, sizeof(mybuf));
 
     if (button == SWKBD_BUTTON_LEFT) {
-        strcpy(outText, mybuf);
-        return 1;
-    } else if (button == SWKBD_BUTTON_RIGHT)
-        return -1;
+    strncpy(outText, mybuf, ABOUT_INPUT_MAX_SIZE - 1);
 
-    printf("swkbd event: %d\n", swkbdGetResult(&swkbd));
+    outText[ABOUT_INPUT_MAX_SIZE - 1] = '\0';
+        return 1;
+    } else if (button == SWKBD_BUTTON_RIGHT) {
+        outText[0] = '\0';
+        return -1;
+    }
+
+    outText[0] = '\0';
+#ifdef _DEBUG
+    debug_printf("swkbd event: %i, %d\n", button, swkbdGetResult(&swkbd));
+#endif
     return -2;
 }
 
-void ctr_input_init()
+void ctr_input_init(void)
 {
-    ctr_init_qtm();
     ctr_input.input = INPUT_TOUCH;
     previousSliderState = osGet3DSliderState();
 
-    if (setRectMapScaled(scaled_rect_top, 0) == 0) {
+    if (setRectMapScaled(true, 0) == 0) {
         mouse_hide();
         mouse_set_position(offsetX_field + (rectMaps[DISPLAY_FIELD][0]->src_w / 2),
-                           offsetY_field + (rectMaps[DISPLAY_FIELD][0]->src_h / 2));
+                offsetY_field + (rectMaps[DISPLAY_FIELD][0]->src_h / 2));
         mouse_show();
     }
-
 }
 
-void ctr_input_exit()
+void ctr_input_exit(void)
 {
-    ctr_exit_qtm();
+    return;
 }
 
 } // namespace fallout
